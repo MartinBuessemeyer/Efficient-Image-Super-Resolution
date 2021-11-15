@@ -1,0 +1,2 @@
+# imagenet data directory - data should always be in a local (SSD or HDD) directory
+IMAGENET_HOME="/mnt/ssd1/datasets/ImageNet/extracted"
