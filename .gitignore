@@ -64,3 +64,4 @@ target/
 *.txt
 *.swp
 .vscode
+.idea

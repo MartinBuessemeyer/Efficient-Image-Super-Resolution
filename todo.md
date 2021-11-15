@@ -2,10 +2,10 @@
 
 ...to make this your own project:
 
-- [ ] Clone this template (you probably do not want to fork it!)
+- [x] Clone this template (you probably do not want to fork it!)
 - [ ] Adapt the default config file `config/default`:
-    - [ ] Adapt `TARGET_TAG` (give it a cool and unique project name)
-    - [ ] Adapt `EMAIL` to yours (and uncomment the line), so you get e-mail updates from slurm
+    - [x] Adapt `TARGET_TAG` (give it a cool and unique project name)
+    - [x] Adapt `EMAIL` to yours (and uncomment the line), so you get e-mail updates from slurm
     - You can adapt other values later, but here are some more suggestions:
         - [ ] Adapt `ENROOT_IMAGE_HOME` to share images with other users
         - [ ] Adapt `VERBOSITY` to show sourced config files to help debugging
@@ -16,8 +16,8 @@
           is mounted during installation (to `/install`), so you can use it
           to store extra files (e.g. requirements.txt)
     - Build with docker:
-        - [ ] Configure `BASE_IMAGE` with the docker image you want to start from
-        - [ ] Adapt the `Dockerfile` so it installs your requirements
+        - [x] Configure `BASE_IMAGE` with the docker image you want to start from
+        - [x] Adapt the `Dockerfile` so it installs your requirements
     - Import from docker:
         - [ ] Configure `BASE_IMAGE` with the docker image you want to import
 - [ ] Delete the *src* folder (`rm -rf src`) and put your own model and training code there

@@ -2,7 +2,7 @@
 default_value ENROOT_IMAGE_HOME "/enroot_share/${USER}"
 
 # output enroot tag
-default_value TARGET_TAG "my_project"
+default_value TARGET_TAG "eisr"
 
 # output enroot .sqsh file (usually ${TARGET_TAG}.sqsh)
 default_value TARGET_SQSH "${TARGET_TAG}.sqsh"
@@ -14,7 +14,7 @@ default_value INSTALLATION_SCRIPT "00_install.sh"
 default_value BASE_IMAGE "docker://pytorch/pytorch:1.8.1-cuda11.1-cudnn8-runtime"
 
 # send the e-mail about job changes to the following email (make sure you change it to your e-mail and username)
-#default_value_for_user username EMAIL "firstname.lastname@hpi.de"
+#default_value_for_user username EMAIL "martin.buessemeyer@student.hpi.de;bjoern.daase@student.hpi.de;maximilian.kleissl@student.hpi.de"
 
 # debug level (setting this to 1 will increase output for all commands after exporting this file)
 #default_value VERBOSITY 0
@@ -28,5 +28,6 @@ default_value BASE_IMAGE "docker://pytorch/pytorch:1.8.1-cuda11.1-cudnn8-runtime
 # remap to user instead of root (environment variable for enroot)
 #export ENROOT_REMAP_ROOT=yes
 
-# stop python from buffering its output (environment variable for python)
+# stop python from buffering
+ its output (environment variable for python)
 export PYTHONUNBUFFERED=x

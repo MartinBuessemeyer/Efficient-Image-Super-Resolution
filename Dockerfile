@@ -16,6 +16,8 @@ RUN apt-get update && apt-get -y install \
     vim \
     zsh
 
+# RUN pip install -r src/requirements.txt
+
 # Install tensorboardX and pandas (and PyCharm development tools for debugging) but delete cache afterwards
 RUN pip install tensorboardX pandas && \
     pip install pydevd-pycharm~=211.7628.24 && \

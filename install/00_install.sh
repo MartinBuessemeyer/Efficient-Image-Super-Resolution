@@ -15,6 +15,8 @@ RUN apt-get -y install \
     vim \
     zsh
 
+RUN pip install -r /install/requirements.txt
+
 # Install tensorboardX and pandas
 RUN pip install tensorboardX pandas
 
