@@ -1,5 +1,11 @@
 # Efficient-Image-Super-Resolution
 
+## SLURM 
+
+#### Execute container
+`srun --gres gpu:1 --container-image /enroot_share/midl21t1/eisr.sqsh 
+--container-mounts=/home/midl21t1/Efficient-Image-Super-Resolution:/home/midl21t1/Efficient-Image-Super-Resolution 
+--container-workdir=/home/midl21t1/Efficient-Image-Super-Resolution --container-writable --pty bash`
 
 
 ## Dependencies

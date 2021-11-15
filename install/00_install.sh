@@ -16,7 +16,7 @@ RUN apt-get -y install \
     zsh
 
 # install own dependencies
-RUN pip install torchvision
+RUN pip install torchvision opencv-python-headless numpy scikit-image imageio matplotlib tqdm
 
 # Install tensorboardX and pandas
 RUN pip install tensorboardX pandas
