@@ -17,7 +17,7 @@ def main():
     # --------------------------------
     # basic settings
     # --------------------------------
-    testsets = 'DIV2K'
+    testsets = os.path.join('..', 'data')
     testset_L = 'DIV2K_valid_LR_bicubic'
     #testset_L = 'DIV2K_test_LR_bicubic'
 
