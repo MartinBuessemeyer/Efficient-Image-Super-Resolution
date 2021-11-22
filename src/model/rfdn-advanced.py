@@ -1,16 +1,16 @@
-import model.block as B
 import torch
 import torch.nn as nn
-
+import model.block as B
+from model import common
 
 def make_model(args, parent=False):
-    model = RFDN(args)
+    model = RFDNAdvanced(args)
     return model
 
 
-class RFDN(nn.Module):
+class RFDNAdvanced(nn.Module):
     def __init__(self, args):
-        super(RFDN, self).__init__()
+        super(RFDNAdvanced, self).__init__()
 
         if args.n_feats != 50:
             print(f'WARNING: Using non paper num output channels of {args.n_feats} instead of 50.')
@@ -29,7 +29,12 @@ class RFDN(nn.Module):
         self.upsampler = upsample_block(args.n_feats, args.n_colors, upscale_factor=args.scale[0])
         self.scale_idx = 0
 
+        self.sub_mean = common.MeanShift(args.rgb_range)
+        self.add_mean = common.MeanShift(args.rgb_range, sign=1)
+
+
     def forward(self, input):
+        input = self.sub_mean(input)
         out_fea = self.fea_conv(input)
         out_B1 = self.B1(out_fea)
         out_B2 = self.B2(out_B1)
@@ -40,6 +45,8 @@ class RFDN(nn.Module):
         out_lr = self.LR_conv(out_B) + out_fea
 
         output = self.upsampler(out_lr)
+
+        output = self.add_mean(output)
         return output
 
     def set_scale(self, scale_idx):
