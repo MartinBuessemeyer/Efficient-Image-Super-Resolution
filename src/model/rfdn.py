@@ -1,32 +1,39 @@
 import torch
 import torch.nn as nn
 import model.block as B
+from model import common
 
 def make_model(args, parent=False):
-    model = RFDN()
+    model = RFDN(args)
     return model
 
 
 class RFDN(nn.Module):
-    def __init__(self, in_nc=3, nf=50, num_modules=4, out_nc=3, upscale=4):
+    def __init__(self, args):
         super(RFDN, self).__init__()
 
-        self.fea_conv = B.conv_layer(in_nc, nf, kernel_size=3)
+        if args.n_feats != 50:
+            print(f'WARNING: Using non paper num output channels of {args.n_feats} instead of 50.')
+        self.fea_conv = B.conv_layer(args.n_colors, args.n_feats, kernel_size=3)
 
-        self.B1 = B.RFDB(in_channels=nf)
-        self.B2 = B.RFDB(in_channels=nf)
-        self.B3 = B.RFDB(in_channels=nf)
-        self.B4 = B.RFDB(in_channels=nf)
-        self.c = B.conv_block(nf * num_modules, nf, kernel_size=1, act_type='lrelu')
+        self.B1 = B.RFDB(in_channels=args.n_feats)
+        self.B2 = B.RFDB(in_channels=args.n_feats)
+        self.B3 = B.RFDB(in_channels=args.n_feats)
+        self.B4 = B.RFDB(in_channels=args.n_feats)
+        self.c = B.conv_block(args.n_feats * args.num_rfdb_blocks, args.n_feats, kernel_size=1, act_type='lrelu')
 
-        self.LR_conv = B.conv_layer(nf, nf, kernel_size=3)
+        self.LR_conv = B.conv_layer(args.n_feats, args.n_feats, kernel_size=3)
 
         upsample_block = B.pixelshuffle_block
-        self.upsampler = upsample_block(nf, out_nc, upscale_factor=upscale)
+        self.upsampler = upsample_block(args.n_feats, args.n_colors, upscale_factor=args.scale[0])
         self.scale_idx = 0
+
+        self.sub_mean = common.MeanShift(args.rgb_range)
+        self.add_mean = common.MeanShift(args.rgb_range, sign=1)
 
 
     def forward(self, input):
+        input = self.sub_mean(input)
         out_fea = self.fea_conv(input)
         out_B1 = self.B1(out_fea)
         out_B2 = self.B2(out_B1)
@@ -38,6 +45,7 @@ class RFDN(nn.Module):
 
         output = self.upsampler(out_lr)
 
+        output = self.add_mean(output)
         return output
 
     def set_scale(self, scale_idx):

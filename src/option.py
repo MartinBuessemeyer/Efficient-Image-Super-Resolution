@@ -68,6 +68,10 @@ parser.add_argument('--precision', type=str, default='single',
                     choices=('single', 'half'),
                     help='FP precision for test (single | half)')
 
+# Option for RFDN
+parser.add_argument('--num_rfdb_blocks', type=int, default=4,
+                    help='Number of RFDB blocks to used.')
+
 # Option for Residual dense network (RDN)
 parser.add_argument('--G0', type=int, default=64,
                     help='default number of filters. (Use in RDN)')
