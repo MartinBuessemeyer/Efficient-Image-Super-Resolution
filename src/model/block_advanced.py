@@ -18,7 +18,8 @@ def norm(norm_type, nc):
     elif norm_type == 'instance':
         layer = nn.InstanceNorm2d(nc, affine=False)
     else:
-        raise NotImplementedError('normalization layer [{:s}] is not found'.format(norm_type))
+        raise NotImplementedError(
+            'normalization layer [{:s}] is not found'.format(norm_type))
     return layer
 
 
@@ -31,7 +32,8 @@ def pad(pad_type, padding):
     elif pad_type == 'replicate':
         layer = nn.ReplicationPad2d(padding)
     else:
-        raise NotImplementedError('padding layer [{:s}] is not implemented'.format(pad_type))
+        raise NotImplementedError(
+            'padding layer [{:s}] is not implemented'.format(pad_type))
     return layer
 
 
@@ -63,18 +65,9 @@ def activation(act_type, inplace=True, neg_slope=0.05, n_prelu=1):
     elif act_type == 'prelu':
         layer = nn.PReLU(num_parameters=n_prelu, init=neg_slope)
     else:
-        raise NotImplementedError('activation layer [{:s}] is not found'.format(act_type))
+        raise NotImplementedError(
+            'activation layer [{:s}] is not found'.format(act_type))
     return layer
-
-
-class ShortcutBlock(nn.Module):
-    def __init__(self, submodule):
-        super(ShortcutBlock, self).__init__()
-        self.sub = submodule
-
-    def forward(self, x):
-        output = x + self.sub(x)
-        return output
 
 
 def mean_channels(F):
@@ -86,14 +79,16 @@ def mean_channels(F):
 def stdv_channels(F):
     assert (F.dim() == 4)
     F_mean = mean_channels(F)
-    F_variance = (F - F_mean).pow(2).sum(3, keepdim=True).sum(2, keepdim=True) / (F.size(2) * F.size(3))
+    F_variance = (F - F_mean).pow(2).sum(3, keepdim=True).sum(2,
+                                                              keepdim=True) / (F.size(2) * F.size(3))
     return F_variance.pow(0.5)
 
 
 def sequential(*args):
     if len(args) == 1:
         if isinstance(args[0], OrderedDict):
-            raise NotImplementedError('sequential does not support OrderedDict input.')
+            raise NotImplementedError(
+                'sequential does not support OrderedDict input.')
         return args[0]
     modules = []
     for module in args:
@@ -126,7 +121,8 @@ class ESA(nn.Module):
         v_range = self.relu(self.conv_max(v_max))
         c3 = self.relu(self.conv3(v_range))
         c3 = self.conv3_(c3)
-        c3 = F.interpolate(c3, (x.size(2), x.size(3)), mode='bilinear', align_corners=False)
+        c3 = F.interpolate(c3, (x.size(2), x.size(3)),
+                           mode='bilinear', align_corners=False)
         cf = self.conv_f(c1_)
         c4 = self.conv4(c3 + cf)
         m = self.sigmoid(c4)
@@ -137,47 +133,66 @@ class ESA(nn.Module):
 class RFDB(nn.Module):
     def __init__(self, in_channels, distillation_rate=0.25):
         super(RFDB, self).__init__()
-        self.dc = self.distilled_channels = in_channels // 2
-        self.rc = self.remaining_channels = in_channels
-        self.c1_d = conv_layer(in_channels, self.dc, 1)
-        self.c1_r = conv_layer(in_channels, self.rc, 3)
-        self.c1_r_1 = conv_layer(in_channels, self.rc, 1)
-        self.c2_d = conv_layer(self.remaining_channels, self.dc, 1)
-        self.c2_r = conv_layer(self.remaining_channels, self.rc, 3)
-        self.c2_r_1 = conv_layer(self.remaining_channels, self.rc, 1)
-        self.c3_d = conv_layer(self.remaining_channels, self.dc, 1)
-        self.c3_r = conv_layer(self.remaining_channels, self.rc, 3)
-        self.c3_r_1 = conv_layer(self.remaining_channels, self.rc, 1)
-        self.c4 = conv_layer(self.remaining_channels, self.dc, 3)
-        self.act = activation('lrelu', neg_slope=0.05)
-        self.c5 = conv_layer(self.dc * 4, in_channels, 1)
+        self.distilled_channels = in_channels // 2
+        self.remaining_channels = in_channels
+
+        self.distilled1 = conv_layer(in_channels, self.distilled_channels, 1)
+        self.residual1_conv3 = conv_layer(
+            in_channels, self.remaining_channels, 3)
+        self.residual1_conv1 = conv_layer(
+            in_channels, self.remaining_channels, 1)
+
+        self.distilled2 = conv_layer(
+            self.remaining_channels, self.distilled_channels, 1)
+        self.residual2_conv3 = conv_layer(
+            self.remaining_channels, self.remaining_channels, 3)
+        self.residual2_conv1 = conv_layer(
+            self.remaining_channels, self.remaining_channels, 1)
+
+        self.distilled3 = conv_layer(
+            self.remaining_channels, self.distilled_channels, 1)
+        self.residual3_conv3 = conv_layer(
+            self.remaining_channels, self.remaining_channels, 3)
+        self.residual3_conv1 = conv_layer(
+            self.remaining_channels, self.remaining_channels, 1)
+
+        self.distilled4 = conv_layer(
+            self.remaining_channels, self.distilled_channels, 3)
+
+        self.activation = activation('lrelu', neg_slope=0.05)
+        self.distilled = conv_layer(
+            self.distilled_channels * 4, in_channels, 1)
         self.esa = ESA(in_channels, nn.Conv2d)
 
     def forward(self, input):
-        distilled_c1 = self.act(self.c1_d(input))
-        r_c1 = (self.c1_r(input))
-        r_c1_1 = (self.c1_r_1(input))
-        r_c1 = self.act(r_c1 + r_c1_1 + input)
+        distilled1 = self.activation(self.distilled1(input))
+        residual1_conv3 = (self.residual1_conv3(input))
+        residual1_conv1 = (self.residual1_conv1(input))
+        residual1 = self.activation(residual1_conv3 + residual1_conv1 + input)
 
-        distilled_c2 = self.act(self.c2_d(r_c1))
-        r_c2 = (self.c2_r(r_c1))
-        r_c2_1 = (self.c2_r_1(r_c1))
-        r_c2 = self.act(r_c2 + r_c2_1 + r_c1)
+        distilled2 = self.activation(self.distilled2(residual1))
+        residual2_conv3 = (self.residual2_conv3(residual1))
+        residual2_conv1 = (self.residual2_conv1(residual1))
+        residual2 = self.activation(
+            residual2_conv3 + residual2_conv1 + residual1)
 
-        distilled_c3 = self.act(self.c3_d(r_c2))
-        r_c3 = (self.c3_r(r_c2))
-        r_c3_1 = (self.c3_r_1(r_c2))
-        r_c3 = self.act(r_c3 + r_c3_1 + r_c2)
+        distilled3 = self.activation(self.distilled3(residual2))
+        residual3_conv3 = (self.residual3_conv3(residual2))
+        residual3_conv1 = (self.residual3_conv1(residual2))
+        residual3 = self.activation(
+            residual3_conv3 + residual3_conv1 + residual2)
 
-        r_c4 = self.act(self.c4(r_c3))
+        distilled4 = self.activation(self.distilled4(residual3))
 
-        out = torch.cat([distilled_c1, distilled_c2, distilled_c3, r_c4], dim=1)
-        out_fused = self.esa(self.c5(out))
+        out = torch.cat(
+            [distilled1, distilled2, distilled3, distilled4], dim=1)
+        out_fused = self.esa(self.distilled(out))
 
         return out_fused
 
 
 def pixelshuffle_block(in_channels, out_channels, upscale_factor=2, kernel_size=3, stride=1):
-    conv = conv_layer(in_channels, out_channels * (upscale_factor ** 2), kernel_size, stride)
+    conv = conv_layer(in_channels, out_channels *
+                      (upscale_factor ** 2), kernel_size, stride)
     pixel_shuffle = nn.PixelShuffle(upscale_factor)
     return sequential(conv, pixel_shuffle)
