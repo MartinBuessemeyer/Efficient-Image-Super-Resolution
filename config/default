@@ -20,7 +20,7 @@ default_value BASE_IMAGE "docker://pytorch/pytorch:1.8.1-cuda11.1-cudnn8-runtime
 #default_value VERBOSITY 0
 
 # the debug port for PyCharm Debugging (see README.md)
-#export REMOTE_PYCHARM_DEBUG_PORT=12345
+#export REMOTE_PYCHARM_DEBUG_PORT=12043
 
 # make enroot container writable (environment variable for enroot)
 #export ENROOT_ROOTFS_WRITABLE=yes
