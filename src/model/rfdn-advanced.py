@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-import model.block as B
+import model.block_advanced as B
 from model import common
 
 def make_model(args, parent=False):

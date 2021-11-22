@@ -1,4 +1,4 @@
-import model.block as B
+import model as B
 import torch
 import torch.nn as nn
 
