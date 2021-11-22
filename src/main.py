@@ -10,7 +10,7 @@ from trainer import Trainer
 import os
 if os.environ.get('REMOTE_PYCHARM_DEBUG_SESSION', False):
     import pydevd_pycharm
-    pydevd_pycharm.settrace('localhost', port=int(os.environ.get('REMOTE_PYCHARM_DEBUG_PORT', "12345")), stdoutToServer=True, stderrToServer=True, suspend=False)
+    pydevd_pycharm.settrace('localhost', port=int(os.environ.get('REMOTE_PYCHARM_DEBUG_PORT', "12043")), stdoutToServer=True, stderrToServer=True, suspend=False)
 
 torch.manual_seed(args.seed)
 checkpoint = utility.checkpoint(args)
