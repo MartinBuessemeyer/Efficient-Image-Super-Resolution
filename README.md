@@ -3,9 +3,7 @@
 ## SLURM 
 
 #### Execute container
-`srun --gres gpu:1 --container-image /enroot_share/midl21t1/eisr.sqsh 
---container-mounts=/home/midl21t1/Efficient-Image-Super-Resolution:/home/midl21t1/Efficient-Image-Super-Resolution,/mnt=/mnt
---container-workdir=/home/midl21t1/Efficient-Image-Super-Resolution --container-writable --pty bash`
+`srun -w fb10dl06 --gres gpu:1 --container-image /enroot_share/midl21t1/eisr.sqsh --container-mounts=/home/midl21t1/Efficient-Image-Super-Resolution:/home/midl21t1/Efficient-Image-Super-Resolution,/mnt/ssd1/midl21t1/datasets/:/mnt/ssd1/midl21t1/datasets/ --container-workdir=/home/midl21t1/Efficient-Image-Super-Resolution --container-writable --pty bash`
 
 
 ## Dependencies
