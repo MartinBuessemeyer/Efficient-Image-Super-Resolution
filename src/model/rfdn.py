@@ -16,11 +16,12 @@ class RFDN(nn.Module):
             print(f'WARNING: Using non paper num output channels of {args.n_feats} instead of 50.')
         self.fea_conv = B.conv_layer(args.n_colors, args.n_feats, kernel_size=3)
 
+        num_rfdb_blocks = 4
         self.B1 = B.RFDB(in_channels=args.n_feats)
         self.B2 = B.RFDB(in_channels=args.n_feats)
         self.B3 = B.RFDB(in_channels=args.n_feats)
         self.B4 = B.RFDB(in_channels=args.n_feats)
-        self.c = B.conv_block(args.n_feats * args.num_rfdb_blocks, args.n_feats, kernel_size=1, act_type='lrelu')
+        self.c = B.conv_block(args.n_feats * num_rfdb_blocks, args.n_feats, kernel_size=1, act_type='lrelu')
 
         self.LR_conv = B.conv_layer(args.n_feats, args.n_feats, kernel_size=3)
 
