@@ -129,60 +129,62 @@ class ESA(nn.Module):
 
         return x * m
 
+class SRB(nn.Module):
+    def __init__(self, in_channels, remaining_channels, activation):
+        super(SRB, self).__init__()
+
+        self.activation = activation
+
+        self.residual_conv3 = conv_layer(in_channels, remaining_channels, 3)
+        self.residual_conv3 = conv_layer(in_channels, remaining_channels, 1)
+
+    def forward(self, input):
+        residual_conv3 = (self.residual_conv3(input))
+        residual_conv1 = (self.residual_conv1(input))
+        residual = self.activation(residual_conv3 + residual_conv1 + input)
+        
+        return residual
+
+
 
 class RFDB(nn.Module):
     def __init__(self, in_channels, distillation_rate=0.25):
         super(RFDB, self).__init__()
         self.distilled_channels = in_channels // 2
         self.remaining_channels = in_channels
+        self.activation = activation('lrelu', neg_slope=0.05)
 
         self.distilled1 = conv_layer(in_channels, self.distilled_channels, 1)
-        self.residual1_conv3 = conv_layer(
-            in_channels, self.remaining_channels, 3)
-        self.residual1_conv1 = conv_layer(
-            in_channels, self.remaining_channels, 1)
+        self.srb1 = SRB(in_channels, self.remaining_channels, self.activation)
 
         self.distilled2 = conv_layer(
             self.remaining_channels, self.distilled_channels, 1)
-        self.residual2_conv3 = conv_layer(
-            self.remaining_channels, self.remaining_channels, 3)
-        self.residual2_conv1 = conv_layer(
-            self.remaining_channels, self.remaining_channels, 1)
+        self.srb2 = SRB(
+            self.remaining_channels, self.remaining_channels, self.activation)
 
         self.distilled3 = conv_layer(
             self.remaining_channels, self.distilled_channels, 1)
-        self.residual3_conv3 = conv_layer(
-            self.remaining_channels, self.remaining_channels, 3)
-        self.residual3_conv1 = conv_layer(
-            self.remaining_channels, self.remaining_channels, 1)
+        self.srb3 = SRB(
+            self.remaining_channels, self.remaining_channels, self.activation)
 
         self.distilled4 = conv_layer(
             self.remaining_channels, self.distilled_channels, 3)
 
-        self.activation = activation('lrelu', neg_slope=0.05)
         self.distilled = conv_layer(
             self.distilled_channels * 4, in_channels, 1)
         self.esa = ESA(in_channels, nn.Conv2d)
 
     def forward(self, input):
         distilled1 = self.activation(self.distilled1(input))
-        residual1_conv3 = (self.residual1_conv3(input))
-        residual1_conv1 = (self.residual1_conv1(input))
-        residual1 = self.activation(residual1_conv3 + residual1_conv1 + input)
+        srb1 = self.srb1(input)
 
-        distilled2 = self.activation(self.distilled2(residual1))
-        residual2_conv3 = (self.residual2_conv3(residual1))
-        residual2_conv1 = (self.residual2_conv1(residual1))
-        residual2 = self.activation(
-            residual2_conv3 + residual2_conv1 + residual1)
+        distilled2 = self.activation(self.distilled2(srb1))
+        srb2 = self.srb2(srb1)
 
-        distilled3 = self.activation(self.distilled3(residual2))
-        residual3_conv3 = (self.residual3_conv3(residual2))
-        residual3_conv1 = (self.residual3_conv1(residual2))
-        residual3 = self.activation(
-            residual3_conv3 + residual3_conv1 + residual2)
+        distilled3 = self.activation(self.distilled3(srb2))
+    srb3 = self.srb3(srb2)
 
-        distilled4 = self.activation(self.distilled4(residual3))
+        distilled4 = self.activation(self.distilled4(srb3))
 
         out = torch.cat(
             [distilled1, distilled2, distilled3, distilled4], dim=1)
