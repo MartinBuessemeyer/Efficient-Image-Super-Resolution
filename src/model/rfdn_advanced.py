@@ -55,3 +55,9 @@ class RFDNAdvanced(nn.Module):
 
     def set_scale(self, scale_idx):
         self.scale_idx = scale_idx
+
+    def switch_to_deploy(self):
+        self.B1.switch_to_deploy()
+        self.B2.switch_to_deploy()
+        self.B3.switch_to_deploy()
+        self.B4.switch_to_deploy()

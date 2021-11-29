@@ -31,8 +31,12 @@ def main():
             while not t.terminate():
                 t.train()
                 t.test()
+            print("interference")
+            _model.switch_to_deploy()
+            t.test()
 
             checkpoint.done()
+
 
 if __name__ == '__main__':
     main()

@@ -130,20 +130,84 @@ class ESA(nn.Module):
         return x * m
 
 class SRB(nn.Module):
-    def __init__(self, in_channels, remaining_channels, activation):
+    def __init__(self, in_channels, out_channels, activation, deploy=False):
         super(SRB, self).__init__()
 
         self.activation = activation
+        self.in_channels = in_channels
+        self.deploy = deploy
 
-        self.residual_conv3 = conv_layer(in_channels, remaining_channels, 3)
-        self.residual_conv3 = conv_layer(in_channels, remaining_channels, 1)
+        if self.deploy:
+            self.reparam = conv_layer(in_channels, out_channels, 3)
+        else:
+            self.conv3 = conv_layer(in_channels, out_channels, 3)
+            self.conv1 = conv_layer(in_channels, out_channels, 1)
+            self.identity = nn.BatchNorm2d(num_features=in_channels) if out_channels == in_channels else None
 
     def forward(self, input):
-        residual_conv3 = (self.residual_conv3(input))
-        residual_conv1 = (self.residual_conv1(input))
-        residual = self.activation(residual_conv3 + residual_conv1 + input)
+        conv3 = (self.conv3(input))
+        conv1 = (self.conv1(input))
+        residual = self.activation(conv3 + conv1 + input)
         
         return residual
+
+    def get_equivalent_kernel_and_bias(self):
+        kernel_3x3, bias_3x3 = self._fuse_bn_tensor(self.conv3)
+        kernel_1x1, bias_1x1 = self._fuse_bn_tensor(self.conv1)
+        kernel_id, bias_id = self._fuse_bn_tensor(self.identity)
+        return kernel_3x3 + self.pad_1x1_to_3x3_tensor(kernel_1x1) + kernel_id, bias_3x3 + bias_1x1 + bias_id
+
+    def pad_1x1_to_3x3_tensor(self, kernel_1x1):
+        if kernel_1x1 is None:
+            return 0
+        else:
+            return torch.nn.functional.pad(kernel1x1, [1,1,1,1])
+
+    def _fuse_bn_tensor(self, branch):
+        if branch is None:
+            return 0, 0
+        if isinstance(branch, nn.Sequential):
+            kernel = branch.conv.weight
+            running_mean = branch.bn.running_mean
+            running_var = branch.bn.running_var
+            gamma = branch.bn.weight
+            beta = branch.bn.bias
+            eps = branch.bn.eps
+        else:
+            assert isinstance(branch, nn.BatchNorm2d)
+            if not hasattr(self, 'id_tensor'):
+                input_dim = self.in_channels // self.groups
+                kernel_value = np.zeros((self.in_channels, input_dim, 3, 3), dtype=np.float32)
+                for i in range(self.in_channels):
+                    kernel_value[i, i % input_dim, 1, 1] = 1
+                self.id_tensor = torch.from_numpy(kernel_value).to(branch.weight.device)
+            kernel = self.id_tensor
+            running_mean = branch.running_mean
+            running_var = branch.running_var
+            gamma = branch.weight
+            beta = branch.bias
+            eps = branch.eps
+        std = (running_var + eps).sqrt()
+        t = (gamma / std).reshape(-1, 1, 1, 1)
+        return kernel * t, beta - running_mean * gamma / std
+
+    def switch_to_deploy(self):
+        if hasattr(self, 'reparam'):
+            return
+        kernel, bias = self.get_equivalent_kernel_and_bias()
+        self.reparam = conv_layer(self.in_channels, out_channels, 3)
+        self.reparam.weight.data = kernel
+        self.reparam.bias.data = bias
+        for para in self.parameters():
+            para.detach_()
+        self.__delattr__('conv3')
+        self.__delattr__('conv1')
+        if hasattr(self, 'identity'):
+            self.__delattr__('_identity')
+        if hasattr(self, 'id_tensor'):
+            self.__delattr__('id_tensor')
+        self.deploy = True
+
 
 
 
@@ -182,7 +246,7 @@ class RFDB(nn.Module):
         srb2 = self.srb2(srb1)
 
         distilled3 = self.activation(self.distilled3(srb2))
-    srb3 = self.srb3(srb2)
+        srb3 = self.srb3(srb2)
 
         distilled4 = self.activation(self.distilled4(srb3))
 
@@ -191,6 +255,11 @@ class RFDB(nn.Module):
         out_fused = self.esa(self.distilled(out))
 
         return out_fused
+
+    def switch_to_deploy(self):
+        self.srb1.switch_to_deploy()
+        self.srb2.switch_to_deploy()
+        self.srb3.switch_to_deploy()
 
 
 def pixelshuffle_block(in_channels, out_channels, upscale_factor=2, kernel_size=3, stride=1):
