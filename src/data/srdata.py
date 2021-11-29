@@ -78,9 +78,12 @@ class SRData(data.Dataset):
                         s, filename, s, self.ext[1]
                     )
                 ))
-                print(os.path.join(
+                if 'DIV2K' not in os.path.join(
                     self.dir_lr, 'X{}/{}x{}{}'.format(
-                        s, filename, s, self.ext[1])))
+                            s, filename, s, self.ext[1])):
+                    print(os.path.join(
+                        self.dir_lr, 'X{}/{}x{}{}'.format(
+                            s, filename, s, self.ext[1])))
 
         return names_hr, names_lr
 
