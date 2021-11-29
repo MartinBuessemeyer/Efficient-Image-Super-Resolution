@@ -133,7 +133,7 @@ class Trainer():
 
         epoch = self.optimizer.get_last_epoch()
         self.ckp.write_log('Test Results:')
-        mini_log = torch.zeros(1, len(self.loader_test), len(self.scale))
+        test_log = torch.zeros(1, len(self.loader_test), len(self.scale))
         self.model.eval()
 
         timer_test = utility.timer()
@@ -147,7 +147,7 @@ class Trainer():
                     sr = utility.quantize(sr, self.args.rgb_range)
 
                     save_list = [sr]
-                    mini_log += utility.calc_psnr(
+                    test_log += utility.calc_psnr(
                         sr, hr, scale, self.args.rgb_range, dataset=d
                     )
                     if self.args.save_gt:
@@ -156,13 +156,13 @@ class Trainer():
                     if self.args.save_results:
                         self.ckp.save_results(d, filename[0], save_list, scale)
 
-                mini_log[-1, idx_data, idx_scale] /= len(d)
-                best = mini_log.max(0)
+                test_log[-1, idx_data, idx_scale] /= len(d)
+                best = test_log.max(0)
                 self.ckp.write_log(
                     '[{} x{}]\tPSNR: {:.3f}'.format(
                         d.dataset.name,
                         scale,
-                        mini_log[-1, idx_data, idx_scale]
+                        test_log[-1, idx_data, idx_scale]
                     )
                 )
 
