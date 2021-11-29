@@ -34,9 +34,13 @@ class Data:
 
         self.loader_test = []
         for d in args.data_test:
-            module_name = d if d.find('DIV2K-Q') < 0 else 'DIV2KJPEG'
-            m = import_module('data.' + module_name.lower())
-            testset = getattr(m, module_name)(args, train=False, name=d)
+            if d in ['Set5', 'Set14', 'B100', 'Urban100']:
+                m = import_module('data.benchmark')
+                testset = getattr(m, 'Benchmark')(args, train=False, name=d)
+            else:
+                module_name = d if d.find('DIV2K-Q') < 0 else 'DIV2KJPEG'
+                m = import_module('data.' + module_name.lower())
+                testset = getattr(m, module_name)(args, train=False, name=d)
 
             self.loader_test.append(
                 dataloader.DataLoader(

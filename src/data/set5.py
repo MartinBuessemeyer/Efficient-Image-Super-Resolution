@@ -1,5 +1,7 @@
 import os
+
 from data import srdata
+
 
 class Set5(srdata.SRData):
     def __init__(self, args, name='Set5', train=True, benchmark=False):
