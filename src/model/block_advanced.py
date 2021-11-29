@@ -152,9 +152,13 @@ class SRB(nn.Module):
             self.identity = nn.BatchNorm2d(num_features=in_channels) if out_channels == in_channels else None
 
     def forward(self, input):
-        conv3 = (self.conv3(input))
-        conv1 = (self.conv1(input))
-        residual = self.activation(conv3 + conv1 + input)
+        if self.deploy:
+            conv3 = (self.conv3(input))
+            conv1 = (self.conv1(input))
+            residual = self.activation(conv3 + conv1 + input)
+        else:
+            residual = self.activation(self.reparam(input))
+
         
         return residual
 
