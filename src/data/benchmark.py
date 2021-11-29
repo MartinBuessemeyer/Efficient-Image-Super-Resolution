@@ -18,6 +18,9 @@ class Benchmark(srdata.SRData):
         self.apath = os.path.join(dir_data, self.name)
         self.dir_hr = os.path.join(self.apath, 'hr')
         self.dir_lr = os.path.join(self.apath, 'lr')
-        print(self.dir_hr, self.dir_lr)
-        self.ext = ('', '.png')
+        self.ext = ('.png', '.png')
 
+    def _get_lr_filepath(self, hr_filename, scale):
+        return os.path.join(
+                    self.dir_lr, f'x{scale}', f'{hr_filename.replace("HR", "LR")}{self.ext[1]}'
+                )
