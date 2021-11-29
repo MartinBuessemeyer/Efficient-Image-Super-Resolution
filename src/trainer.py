@@ -8,8 +8,7 @@ from tqdm import tqdm
 
 
 def init_wandb_logging(args):
-    wandb.init(project=args.wandb_project_name, entity="midl21t1")
-    wandb.config = args.__dict__
+    wandb.init(project=args.wandb_project_name, entity="midl21t1", config=args.__dict__)
 
 
 def add_test_wandb_logs(num_files, scale_to_sum_losses, scale_to_sum_psnr):
