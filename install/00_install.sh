@@ -19,7 +19,7 @@ RUN apt-get -y install \
 RUN pip install torchvision pillow opencv-python-headless numpy scikit-image imageio matplotlib tqdm
 
 # Install tensorboardX and pandas
-RUN pip install tensorboardX pandas
+RUN pip install tensorboardX pandas wandb
 
 # Install development tool for PyCharm for remote debugging
 RUN pip install pydevd-pycharm~=211.7628.24
