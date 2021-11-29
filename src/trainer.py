@@ -11,6 +11,7 @@ def init_wandb_logging(args):
     wandb.init(project=args.wandb_project_name, entity="midl21t1")
     wandb.config = args.__dict__
 
+
 def add_test_wandb_logs(num_files, scale_to_sum_losses, scale_to_sum_psnr):
     test_logs = {}
     test_mean_loss = 0
@@ -26,6 +27,7 @@ def add_test_wandb_logs(num_files, scale_to_sum_losses, scale_to_sum_psnr):
     test_logs['test_mean_loss'] = test_mean_loss
     test_logs['test_mean_psnr'] = test_mean_psnr
     wandb.log(test_logs)
+
 
 class Trainer():
     def __init__(self, args, loader, my_model, my_loss, ckp):
@@ -90,8 +92,10 @@ class Trainer():
 
             sum_loss += loss
 
-        wandb.log({'train_loss': sum_loss / len(self.loader_train)})
+        wandb.log({'train_loss': sum_loss / len(self.loader_train),
+                   'lr': self.optimizer.get_lr()})
         wandb.watch(self.model)
+
         self.loss.end_log(len(self.loader_train))
         self.error_last = self.loss.log[-1, -1]
         self.optimizer.schedule()
