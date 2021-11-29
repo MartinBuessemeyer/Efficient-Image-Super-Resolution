@@ -17,16 +17,16 @@ def add_test_wandb_logs(num_files, scale_to_sum_losses, scale_to_sum_psnr):
     test_mean_loss = 0
     for scale, sum_loss in scale_to_sum_losses.items():
         test_mean_loss += sum_loss / num_files
-        test_logs[f'test_scale_{scale}_loss'] = sum_loss / num_files
+        test_logs[f'loss_scale_{scale}'] = sum_loss / num_files
     test_mean_loss /= len(scale_to_sum_losses.values())
     test_mean_psnr = 0
     for scale, sum_psnr in scale_to_sum_psnr.items():
         test_mean_loss += sum_psnr / num_files
-        test_logs[f'test_scale_{scale}_loss'] = sum_psnr / num_files
+        test_logs[f'psnr_scale_{scale}'] = sum_psnr / num_files
     test_mean_psnr /= len(scale_to_sum_psnr.values())
-    test_logs['test_mean_loss'] = test_mean_loss
-    test_logs['test_mean_psnr'] = test_mean_psnr
-    wandb.log(test_logs)
+    test_logs['mean_loss'] = test_mean_loss
+    test_logs['mean_psnr'] = test_mean_psnr
+    wandb.log({'test': test_logs})
 
 
 class Trainer():
@@ -92,8 +92,8 @@ class Trainer():
 
             sum_loss += loss
 
-        wandb.log({'train_loss': sum_loss / len(self.loader_train),
-                   'lr': self.optimizer.get_lr()})
+        wandb.log({'train': {'loss': sum_loss / len(self.loader_train),
+                   'lr': self.optimizer.get_lr()}})
         wandb.watch(self.model)
 
         self.loss.end_log(len(self.loader_train))
