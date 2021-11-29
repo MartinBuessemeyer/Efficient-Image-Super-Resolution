@@ -32,7 +32,7 @@ def main():
                 t.train()
                 t.test()
             print("interference")
-            _model.switch_to_deploy()
+            _model.model.switch_to_deploy()
             t.test()
 
             checkpoint.done()
