@@ -132,7 +132,7 @@ class Trainer():
         torch.set_grad_enabled(False)
 
         epoch = self.optimizer.get_last_epoch()
-        self.ckp.write_log('\Test Results:')
+        self.ckp.write_log('Test Results:')
         mini_log = torch.zeros(1, len(self.loader_test), len(self.scale))
         self.model.eval()
 
@@ -159,12 +159,10 @@ class Trainer():
                 mini_log[-1, idx_data, idx_scale] /= len(d)
                 best = mini_log.max(0)
                 self.ckp.write_log(
-                    '[{} x{}]\tPSNR: {:.3f} (Best: {:.3f} @epoch {})'.format(
+                    '[{} x{}]\tPSNR: {:.3f}'.format(
                         d.dataset.name,
                         scale,
-                        self.ckp.log[-1, idx_data, idx_scale],
-                        best[0][idx_data, idx_scale],
-                        best[1][idx_data, idx_scale] + 1
+                        self.ckp.log[0, idx_data, idx_scale]
                     )
                 )
 
