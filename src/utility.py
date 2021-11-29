@@ -106,6 +106,7 @@ class checkpoint():
 
     def plot_psnr(self, epoch):
         print(self.log)
+        print(epoch)
         axis = np.linspace(1, epoch, epoch)
         for idx_data, d in enumerate(self.args.data_test):
             label = 'SR on {}'.format(d)
