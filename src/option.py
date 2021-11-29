@@ -143,6 +143,10 @@ parser.add_argument('--save_results', action='store_true',
 parser.add_argument('--save_gt', action='store_true',
                     help='save low-resolution and high-resolution images together')
 
+# WANDB options
+parser.add_argument('--wandb-project-name', type=str, default='RFDN',
+                    help='Name of the wandb project.')
+
 args = parser.parse_args()
 template.set_template(args)
 
