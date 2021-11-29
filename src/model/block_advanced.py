@@ -210,7 +210,7 @@ class SRB(nn.Module):
         self.__delattr__('conv3')
         self.__delattr__('conv1')
         if hasattr(self, 'identity'):
-            self.__delattr__('_identity')
+            self.__delattr__('identity')
         if hasattr(self, 'id_tensor'):
             self.__delattr__('id_tensor')
         self.deploy = True
