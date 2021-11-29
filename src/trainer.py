@@ -99,7 +99,7 @@ class Trainer():
         self.error_last = self.loss.log[-1, -1]
         self.optimizer.schedule()
 
-    def test(self):
+    def validate(self):
         torch.set_grad_enabled(False)
 
         epoch = self.optimizer.get_last_epoch()
@@ -170,6 +170,55 @@ class Trainer():
 
         torch.set_grad_enabled(True)
 
+    def test(self):
+        torch.set_grad_enabled(False)
+
+        epoch = self.optimizer.get_last_epoch()
+        self.ckp.write_log('Test Results:')
+        test_log = torch.zeros(1, len(self.loader_test), len(self.scale))
+        self.model.eval()
+
+        timer_test = utility.timer()
+        if self.args.save_results: self.ckp.begin_background()
+        for idx_data, d in enumerate(self.loader_test):
+            for idx_scale, scale in enumerate(self.scale):
+                d.dataset.set_scale(idx_scale)
+                for lr, hr, filename in tqdm(d, ncols=80):
+                    lr, hr = self.prepare(lr, hr)
+                    sr = self.model(lr, idx_scale)
+                    sr = utility.quantize(sr, self.args.rgb_range)
+
+                    save_list = [sr]
+                    test_log += utility.calc_psnr(
+                        sr, hr, scale, self.args.rgb_range, dataset=d
+                    )
+                    if self.args.save_gt:
+                        save_list.extend([lr, hr])
+
+                    if self.args.save_results:
+                        self.ckp.save_results(d, filename[0], save_list, scale)
+
+                test_log[-1, idx_data, idx_scale] /= len(d)
+                best = test_log.max(0)
+                self.ckp.write_log(
+                    '[{} x{}]\tPSNR: {:.3f}'.format(
+                        d.dataset.name,
+                        scale,
+                        test_log[-1, idx_data, idx_scale]
+                    )
+                )
+
+        self.ckp.write_log('Forward: {:.2f}s\n'.format(timer_test.toc()))
+
+        if self.args.save_results:
+            self.ckp.end_background()
+
+        self.ckp.write_log(
+            'Total: {:.2f}s\n'.format(timer_test.toc()), refresh=True
+        )
+
+        torch.set_grad_enabled(True)
+
     def prepare(self, *args):
         device = torch.device('cpu' if self.args.cpu else 'cuda')
 
@@ -181,7 +230,7 @@ class Trainer():
 
     def terminate(self):
         if self.args.test_only:
-            self.test()
+            self.validate()
             return True
         else:
             epoch = self.optimizer.get_last_epoch() + 1

@@ -30,9 +30,13 @@ def main():
             t = Trainer(args, loader, _model, _loss, checkpoint)
             while not t.terminate():
                 t.train()
-                t.test()
+                t.validate()
+            print("interference")
+            _model.model.switch_to_deploy()
+            t.test()
 
             checkpoint.done()
+
 
 if __name__ == '__main__':
     main()
