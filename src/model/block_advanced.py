@@ -140,8 +140,10 @@ class SRB(nn.Module):
         if self.deploy:
             self.reparam = conv_layer(in_channels, out_channels, 3)
         else:
-            self.conv3 = nn.Sequential().add_module('conv', conv_layer(in_channels, out_channels, 3))
-            self.conv1 = nn.Sequential().add_module('conv', conv_layer(in_channels, out_channels, 1))
+            self.conv3 = nn.Sequential()
+            self.conv3.add_module('conv', conv_layer(in_channels, out_channels, 3))
+            self.conv1 = nn.Sequential()
+            self.conv1.add_module('conv', conv_layer(in_channels, out_channels, 1))
             self.identity = nn.BatchNorm2d(num_features=in_channels) if out_channels == in_channels else None
 
     def forward(self, input):
