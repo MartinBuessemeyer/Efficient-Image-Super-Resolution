@@ -141,6 +141,7 @@ class SRB(nn.Module):
 
         self.activation = activation
         self.in_channels = in_channels
+        self.out_channels = out_channels
         self.deploy = deploy
 
         if self.deploy:
@@ -167,7 +168,7 @@ class SRB(nn.Module):
         if kernel_1x1 is None:
             return 0
         else:
-            return torch.nn.functional.pad(kernel1x1, [1,1,1,1])
+            return torch.nn.functional.pad(kernel_1x1, [1,1,1,1])
 
     def _fuse_bn_tensor(self, branch):
         if branch is None:
@@ -201,7 +202,7 @@ class SRB(nn.Module):
         if hasattr(self, 'reparam'):
             return
         kernel, bias = self.get_equivalent_kernel_and_bias()
-        self.reparam = conv_layer(self.in_channels, out_channels, 3)
+        self.reparam = conv_layer(self.in_channels, self.out_channels, 3)
         self.reparam.weight.data = kernel
         self.reparam.bias.data = bias
         for para in self.parameters():
