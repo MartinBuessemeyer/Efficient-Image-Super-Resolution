@@ -153,11 +153,11 @@ class SRB(nn.Module):
 
     def forward(self, input):
         if self.deploy:
+            residual = self.activation(self.reparam(input))
+        else:
             conv3 = (self.conv3(input))
             conv1 = (self.conv1(input))
             residual = self.activation(conv3 + conv1 + input)
-        else:
-            residual = self.activation(self.reparam(input))
 
         
         return residual
