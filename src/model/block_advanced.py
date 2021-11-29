@@ -3,6 +3,7 @@ from collections import OrderedDict
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
 
 
 def conv_layer(in_channels, out_channels, kernel_size, stride=1, dilation=1, groups=1):
@@ -181,7 +182,7 @@ class SRB(nn.Module):
         else:
             assert isinstance(branch, nn.BatchNorm2d)
             if not hasattr(self, 'id_tensor'):
-                input_dim = self.in_channels // self.groups
+                input_dim = self.in_channels
                 kernel_value = np.zeros((self.in_channels, input_dim, 3, 3), dtype=np.float32)
                 for i in range(self.in_channels):
                     kernel_value[i, i % input_dim, 1, 1] = 1
