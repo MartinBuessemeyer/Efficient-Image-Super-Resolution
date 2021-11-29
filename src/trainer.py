@@ -120,7 +120,7 @@ class Trainer():
             self.ckp.end_background()
 
         if not self.args.test_only:
-            self.ckp.save(self, epoch, is_best=(best[1][0, 0] + 1 == epoch))
+            self.ckp.save(self, 1, is_best=(best[1][0, 0] + 1 == epoch))
 
         self.ckp.write_log(
             'Total: {:.2f}s\n'.format(timer_test.toc()), refresh=True
