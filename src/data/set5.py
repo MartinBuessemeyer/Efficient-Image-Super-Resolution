@@ -28,4 +28,3 @@ class Set5(srdata.SRData):
         super(Set5, self)._set_filesystem(dir_data)
         self.dir_hr = os.path.join(self.apath, 'hr')
         self.dir_lr = os.path.join(self.apath, 'lr')
-M
