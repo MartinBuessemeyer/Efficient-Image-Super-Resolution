@@ -76,9 +76,6 @@ class SRData(data.Dataset):
             for si, s in enumerate(self.scale):
                 names_lr[si].append(self._get_lr_filepath(filename, s))
 
-        if 'DIV2K' not in names_hr[0]:
-            print(names_hr)
-            print(names_lr)
         return names_hr, names_lr
 
     def _get_lr_filepath(self, hr_filename, scale):
