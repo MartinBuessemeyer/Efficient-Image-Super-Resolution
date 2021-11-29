@@ -10,6 +10,11 @@ def conv_layer(in_channels, out_channels, kernel_size, stride=1, dilation=1, gro
     return nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding=padding, bias=True, dilation=dilation,
                      groups=groups)
 
+def conv_bn(in_channels, out_channels, kernel_size):
+    result = nn.Sequential()
+    result.add_module('conv', conv_layer(in_channels, out_channels, kernel_size))
+    result.add_module('bn', nn.BatchNorm2d(num_features=out_channels))
+    return result
 
 def norm(norm_type, nc):
     norm_type = norm_type.lower()
@@ -140,10 +145,8 @@ class SRB(nn.Module):
         if self.deploy:
             self.reparam = conv_layer(in_channels, out_channels, 3)
         else:
-            self.conv3 = nn.Sequential()
-            self.conv3.add_module('conv', conv_layer(in_channels, out_channels, 3))
-            self.conv1 = nn.Sequential()
-            self.conv1.add_module('conv', conv_layer(in_channels, out_channels, 1))
+            self.conv3 = conv_bn(in_channels, out_channels, 3)
+            self.conv1 = conv_bn(in_channels, out_channels, 1)
             self.identity = nn.BatchNorm2d(num_features=in_channels) if out_channels == in_channels else None
 
     def forward(self, input):
