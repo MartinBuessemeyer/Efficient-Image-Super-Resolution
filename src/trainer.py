@@ -162,7 +162,7 @@ class Trainer():
                     '[{} x{}]\tPSNR: {:.3f}'.format(
                         d.dataset.name,
                         scale,
-                        self.ckp.log[-1, idx_data, idx_scale]
+                        mini_log[-1, idx_data, idx_scale]
                     )
                 )
 
