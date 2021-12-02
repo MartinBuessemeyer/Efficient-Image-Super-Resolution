@@ -20,7 +20,7 @@ def add_test_wandb_logs(num_files, scale_to_sum_losses, scale_to_sum_psnr):
     test_mean_loss /= len(scale_to_sum_losses.values())
     test_mean_psnr = 0
     for scale, sum_psnr in scale_to_sum_psnr.items():
-        test_mean_loss += sum_psnr / num_files
+        test_mean_psnr += sum_psnr / num_files
         test_logs[f'psnr_scale_{scale}'] = sum_psnr / num_files
     test_mean_psnr /= len(scale_to_sum_psnr.values())
     test_logs['mean_loss'] = test_mean_loss
