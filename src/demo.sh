@@ -1,5 +1,5 @@
 # RFDN
-python main.py --model RFDN-Advanced --scale 2 --patch_size 96 --save edsr_baseline_x2 --reset
+python main.py --model RFDN-Advanced --scale 2 --patch_size 96 --save edsr_baseline_x2 --reset --loss 1*L1+1*SSIM
 
 # EDSR baseline model (x2) + JPEG augmentation
 # python main.py --model EDSR --scale 2 --patch_size 96 --save edsr_baseline_x2 --reset
