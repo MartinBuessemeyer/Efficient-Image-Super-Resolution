@@ -261,6 +261,7 @@ class Trainer():
         for idx_data, d in enumerate(self.loader_test):
             for idx_scale, scale in enumerate(self.scale):
                 d.dataset.set_scale(idx_scale)
+                test_log_ssim = 0
                 for lr, hr, filename in tqdm(d, ncols=80):
                     lr, hr = self.prepare(lr, hr)
                     sr = self.model(lr, idx_scale)
@@ -291,7 +292,7 @@ class Trainer():
                     '[{} x{}]\tSSIM: {:.3f}'.format(
                         d.dataset.name,
                         scale,
-                        test_log_ssim
+                        test_log_ssims
                     )
                 )
 
