@@ -270,6 +270,7 @@ class Trainer():
                     test_log_psnr += utility.calc_psnr(
                         sr, hr, scale, self.args.rgb_range, dataset=d
                     )
+                    test_log_ssim += ssim(sr, hr, self.args.rgb_range)
                     if self.args.save_gt:
                         save_list.extend([lr, hr])
 
@@ -277,12 +278,20 @@ class Trainer():
                         self.ckp.save_results(d, filename[0], save_list, scale)
 
                 test_log_psnr[-1, idx_data, idx_scale] /= len(d)
+                test_log_ssim /= len(d)
                 best = test_log_psnr.max(0)
                 self.ckp.write_log(
                     '[{} x{}]\tPSNR: {:.3f}'.format(
                         d.dataset.name,
                         scale,
                         test_log_psnr[-1, idx_data, idx_scale]
+                    )
+                )
+                self.ckp.write_log(
+                    '[{} x{}]\tSSIM: {:.3f}'.format(
+                        d.dataset.name,
+                        scale,
+                        test_log_ssim
                     )
                 )
 
