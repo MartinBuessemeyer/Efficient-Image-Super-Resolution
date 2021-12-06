@@ -148,6 +148,8 @@ parser.add_argument('--save_gt', action='store_true',
 # WANDB options
 parser.add_argument('--wandb-project-name', type=str, default='RFDN',
                     help='Name of the wandb project.')
+parser.add_argument('--wandb-disable', action='store_true',
+                    help='Disables wandb logging.')
 
 args = parser.parse_args()
 template.set_template(args)
