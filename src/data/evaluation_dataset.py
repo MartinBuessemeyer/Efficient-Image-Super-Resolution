@@ -2,15 +2,16 @@ import os
 
 from data import common
 from data import srdata
+import glob
 
 import numpy as np
 
 import torch
 import torch.utils.data as data
 
-class Benchmark(srdata.SRData):
+class EvaluationDataset(srdata.SRData):
     def __init__(self, args, name='', train=False, benchmark=True):
-        super(Benchmark, self).__init__(
+        super(EvaluationDataset, self).__init__(
             args, name=name, train=train, benchmark=True
         )
 
@@ -21,6 +22,7 @@ class Benchmark(srdata.SRData):
         self.ext = ('.png', '.png')
 
     def _get_lr_filepath(self, hr_filename, scale):
+        lr_filename = '_'.join(hr_filename.split('_')[:3]) + f'_{scale}_LR{self.ext[1]}'
         return os.path.join(
-                    self.dir_lr, f'x{scale}', f'{hr_filename.replace("HR", "LR")}{self.ext[1]}'
+                    self.dir_lr, f'x{scale}', f'{lr_filename}'
                 )

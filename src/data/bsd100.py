@@ -1,5 +1,5 @@
 from data.evaluation_dataset import EvaluationDataset
 
 
-class Set5(EvaluationDataset):
+class BSD100(EvaluationDataset):
     pass

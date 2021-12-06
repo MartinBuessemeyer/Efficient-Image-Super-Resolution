@@ -25,7 +25,9 @@ parser.add_argument('--dir_demo', type=str, default='../test',
                     help='demo image directory')
 parser.add_argument('--data_train', type=str, default='DIV2K',
                     help='train dataset name')
-parser.add_argument('--data_test', type=str, default='DIV2K',
+parser.add_argument('--data_validate', type=str, default='DIV2K',
+                    help='validation dataset name')
+parser.add_argument('--data_test', type=str, default='Set5',
                     help='test dataset name')
 parser.add_argument('--data_range', type=str, default='1-800/801-810',
                     help='train/test data range')
@@ -146,12 +148,15 @@ parser.add_argument('--save_gt', action='store_true',
 # WANDB options
 parser.add_argument('--wandb-project-name', type=str, default='RFDN',
                     help='Name of the wandb project.')
+parser.add_argument('--wandb-disable', action='store_true',
+                    help='Disables wandb logging.')
 
 args = parser.parse_args()
 template.set_template(args)
 
 args.scale = list(map(lambda x: int(x), args.scale.split('+')))
 args.data_train = args.data_train.split('+')
+args.data_validate = args.data_validate.split('+')
 args.data_test = args.data_test.split('+')
 
 if args.epochs == 0:
