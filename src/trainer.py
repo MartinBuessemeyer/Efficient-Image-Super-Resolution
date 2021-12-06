@@ -202,4 +202,4 @@ class Trainer:
             return True
         else:
             epoch = self.optimizer.get_last_epoch() + 1
-            return epoch >= self.args.epochs
+            return epoch > self.args.epochs
