@@ -11,8 +11,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from pytorch_msssim import SSIM
-
 class Loss(nn.modules.loss._Loss):
     def __init__(self, args, ckp):
         super(Loss, self).__init__()
@@ -27,9 +25,6 @@ class Loss(nn.modules.loss._Loss):
                 loss_function = nn.MSELoss()
             elif loss_type == 'L1':
                 loss_function = nn.L1Loss()
-            elif loss_type == 'SSIM':
-                ssim = SSIM(win_size=11, win_sigma=1.5, data_range=1, size_average=True, channel=1)
-                loss_function = lambda img1, img2: 1-ssim(img1, img2)
             elif loss_type.find('VGG') >= 0:
                 module = import_module('loss.vgg')
                 loss_function = getattr(module, 'VGG')(

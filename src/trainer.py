@@ -13,27 +13,27 @@ def init_wandb_logging(args):
 
 
 def add_test_wandb_logs(num_files, scale_to_sum_losses, scale_to_sum_psnr, scale_to_sum_ssim):
-    test_log_psnrs = {}
+    test_log = {}
     test_mean_loss = 0
     for scale, sum_loss in scale_to_sum_losses.items():
         test_mean_loss += sum_loss / num_files
-        test_log_psnrs[f'loss_scale_{scale}'] = sum_loss / num_files
+        test_log[f'loss_scale_{scale}'] = sum_loss / num_files
     test_mean_loss /= len(scale_to_sum_losses.values())
     test_mean_psnr = 0
     for scale, sum_psnr in scale_to_sum_psnr.items():
         test_mean_psnr += sum_psnr / num_files
-        test_log_psnrs[f'psnr_scale_{scale}'] = sum_psnr / num_files
+        test_log[f'psnr_scale_{scale}'] = sum_psnr / num_files
     test_mean_psnr /= len(scale_to_sum_psnr.values())
-    test_log_psnrs['mean_loss'] = test_mean_loss
-    test_log_psnrs['mean_psnr'] = test_mean_psnr
+    test_log['mean_loss'] = test_mean_loss
+    test_log['mean_psnr'] = test_mean_psnr
     test_mean_ssim = 0
     for scale, sum_ssim in scale_to_sum_ssim.items():
         test_mean_ssim += sum_ssim / num_files
-        test_log_psnrs['ssim_scale_{scale}'] = sum_ssim / num_files
+        test_log['ssim_scale_{scale}'] = sum_ssim / num_files
     test_mean_ssim /= len(scale_to_sum_ssim.values())
-    test_log_psnrs['mean_psnr'] = test_mean_ssim
+    test_log['mean_psnr'] = test_mean_ssim
   
-    wandb.log({'test': test_log_psnrs})
+    wandb.log({'test': test_log})
 
 
 class Trainer():
@@ -166,7 +166,7 @@ class Trainer():
                     )
                 )
                 self.ckp.write_log(
-                    '[{} x{}]\SSIM: {:.3f})'.format(
+                    '[{} x{}]\tSSIM: {:.3f}'.format(
                         d.dataset.name,
                         scale,
                        scale_to_sum_ssim[scale],
