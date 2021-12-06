@@ -132,7 +132,7 @@ class Trainer():
                     psnr = utility.calc_psnr(
                         sr, hr, scale, self.args.rgb_range, dataset=d
                     )
-                    ssim = ssim(sr, hr, self.args.rgb_range)
+                    my_ssim = ssim(sr, hr, self.args.rgb_range)
                     self.ckp.log[-1, idx_data, idx_scale] += psnr
                     if self.args.save_gt:
                         save_list.extend([lr, hr])
@@ -142,7 +142,7 @@ class Trainer():
 
                     scale_to_sum_losses[scale] += loss
                     scale_to_sum_psnr[scale] += psnr
-                    scale_to_sum_ssim[scale] += ssim
+                    scale_to_sum_ssim[scale] += my_ssim
                     num_files += 1
 
                 self.ckp.log[-1, idx_data, idx_scale] /= len(d)
