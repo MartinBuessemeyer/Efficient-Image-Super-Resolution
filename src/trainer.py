@@ -5,6 +5,7 @@ import torch.nn.utils as utils
 import utility
 import wandb
 from tqdm import tqdm
+from pytorch_msssim import ssim
 
 
 def init_wandb_logging(args):
@@ -12,20 +13,20 @@ def init_wandb_logging(args):
 
 
 def add_test_wandb_logs(num_files, scale_to_sum_losses, scale_to_sum_psnr):
-    test_logs = {}
+    test_log_psnrs = {}
     test_mean_loss = 0
     for scale, sum_loss in scale_to_sum_losses.items():
         test_mean_loss += sum_loss / num_files
-        test_logs[f'loss_scale_{scale}'] = sum_loss / num_files
+        test_log_psnrs[f'loss_scale_{scale}'] = sum_loss / num_files
     test_mean_loss /= len(scale_to_sum_losses.values())
     test_mean_psnr = 0
     for scale, sum_psnr in scale_to_sum_psnr.items():
         test_mean_psnr += sum_psnr / num_files
-        test_logs[f'psnr_scale_{scale}'] = sum_psnr / num_files
+        test_log_psnrs[f'psnr_scale_{scale}'] = sum_psnr / num_files
     test_mean_psnr /= len(scale_to_sum_psnr.values())
-    test_logs['mean_loss'] = test_mean_loss
-    test_logs['mean_psnr'] = test_mean_psnr
-    wandb.log({'test': test_logs})
+    test_log_psnrs['mean_loss'] = test_mean_loss
+    test_log_psnrs['mean_psnr'] = test_mean_psnr
+    wandb.log({'test': test_log_psnrs})
 
 
 class Trainer():
@@ -115,6 +116,7 @@ class Trainer():
 
         scale_to_sum_losses = {scale: 0 for scale in self.scale}
         scale_to_sum_psnr = {scale: 0 for scale in self.scale}
+        scale_to_sum_ssim = {scale: 0 for scale in self.scale}
         num_files = 0
 
         for idx_data, d in enumerate(self.loader_test):
@@ -130,6 +132,7 @@ class Trainer():
                     psnr = utility.calc_psnr(
                         sr, hr, scale, self.args.rgb_range, dataset=d
                     )
+                    ssim = ssim(sr, hr, self.args.rgb_range)
                     self.ckp.log[-1, idx_data, idx_scale] += psnr
                     if self.args.save_gt:
                         save_list.extend([lr, hr])
@@ -139,6 +142,7 @@ class Trainer():
 
                     scale_to_sum_losses[scale] += loss
                     scale_to_sum_psnr[scale] += psnr
+                    scale_to_sum_ssim[scale] += ssim
                     num_files += 1
 
                 self.ckp.log[-1, idx_data, idx_scale] /= len(d)
@@ -150,6 +154,13 @@ class Trainer():
                         self.ckp.log[-1, idx_data, idx_scale],
                         best[0][idx_data, idx_scale],
                         best[1][idx_data, idx_scale] + 1
+                    )
+                )
+                self.ckp.write_log(
+                    '[{} x{}]\SSIM: {:.3f} (Best: {:.3f} @epoch {})'.format(
+                        d.dataset.name,
+                        scale,
+                       scale_to_sum_ssim / len(d),
                     )
                 )
 
@@ -175,7 +186,8 @@ class Trainer():
 
         epoch = self.optimizer.get_last_epoch()
         self.ckp.write_log('Test Results:')
-        test_log = torch.zeros(1, len(self.loader_test), len(self.scale))
+        test_log_psnr = torch.zeros(1, len(self.loader_test), len(self.scale))
+        test_log_ssim = torch.zeros(1, len(self.loader_test), len(self.scale))
         self.model.eval()
 
         timer_test = utility.timer()
@@ -189,22 +201,30 @@ class Trainer():
                     sr = utility.quantize(sr, self.args.rgb_range)
 
                     save_list = [sr]
-                    test_log += utility.calc_psnr(
+                    test_log_psnr += utility.calc_psnr(
                         sr, hr, scale, self.args.rgb_range, dataset=d
                     )
+                    test_log_ssim += ssim(sr, hr, self.args.rgb_range)
                     if self.args.save_gt:
                         save_list.extend([lr, hr])
 
                     if self.args.save_results:
                         self.ckp.save_results(d, filename[0], save_list, scale)
 
-                test_log[-1, idx_data, idx_scale] /= len(d)
-                best = test_log.max(0)
+                test_log_psnr[-1, idx_data, idx_scale] /= len(d)
+                test_log_ssim[-1, idx_data, idx_scale] /= len(d)
                 self.ckp.write_log(
                     '[{} x{}]\tPSNR: {:.3f}'.format(
                         d.dataset.name,
                         scale,
-                        test_log[-1, idx_data, idx_scale]
+                        test_log_psnr[-1, idx_data, idx_scale]
+                    )
+                )
+                self.ckp.write_log(
+                    '[{} x{}]\SSIM: {:.3f}'.format(
+                        d.dataset.name,
+                        scale,
+                        test_log_ssim[-1, idx_data, idx_scale]
                     )
                 )
 
@@ -224,7 +244,7 @@ class Trainer():
 
         epoch = self.optimizer.get_last_epoch()
         self.ckp.write_log('Test Results:')
-        test_log = torch.zeros(1, len(self.loader_test), len(self.scale))
+        test_log_psnr = torch.zeros(1, len(self.loader_test), len(self.scale))
         self.model.eval()
 
         timer_test = utility.timer()
@@ -238,7 +258,7 @@ class Trainer():
                     sr = utility.quantize(sr, self.args.rgb_range)
 
                     save_list = [sr]
-                    test_log += utility.calc_psnr(
+                    test_log_psnr += utility.calc_psnr(
                         sr, hr, scale, self.args.rgb_range, dataset=d
                     )
                     if self.args.save_gt:
@@ -247,13 +267,13 @@ class Trainer():
                     if self.args.save_results:
                         self.ckp.save_results(d, filename[0], save_list, scale)
 
-                test_log[-1, idx_data, idx_scale] /= len(d)
-                best = test_log.max(0)
+                test_log_psnr[-1, idx_data, idx_scale] /= len(d)
+                best = test_log_psnr.max(0)
                 self.ckp.write_log(
                     '[{} x{}]\tPSNR: {:.3f}'.format(
                         d.dataset.name,
                         scale,
-                        test_log[-1, idx_data, idx_scale]
+                        test_log_psnr[-1, idx_data, idx_scale]
                     )
                 )
 
