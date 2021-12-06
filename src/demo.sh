@@ -10,7 +10,7 @@ python main.py --model RFDN --scale 2 --patch_size 96 --save rfdn_batch_size_tes
 python main.py --model RFDN --scale 2 --patch_size 96 --save rfdn_batch_size_test_64 --epochs 10 --dir_data=/mnt/ssd1/midl21t1/datasets --reset --data_test DIV2K+Set5+BSD100+Urban100 --data_validate DIV2K+Set5+BSD100+Urban100 --batch_size_test 64
 python main.py --model RFDN --scale 2 --patch_size 96 --save rfdn_batch_size_test_128 --epochs 10 --dir_data=/mnt/ssd1/midl21t1/datasets --reset --data_test DIV2K+Set5+BSD100+Urban100 --data_validate DIV2K+Set5+BSD100+Urban100 --batch_size_test 128
 
-#python main.py --model RFDN-Advanced --scale 2 --patch_size 96 --save edsr_baseline_x2 --reset --loss 1*L1
+#python main.py --model RFDN-Advanced --scale 2 --patch_size 96 --save edsr_baseline_x2 --reset
 
 # EDSR baseline model (x2) + JPEG augmentation
 # python main.py --model EDSR --scale 2 --patch_size 96 --save edsr_baseline_x2 --reset
