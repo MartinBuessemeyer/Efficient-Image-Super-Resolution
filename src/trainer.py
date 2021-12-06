@@ -146,6 +146,8 @@ class Trainer():
                     num_files += 1
 
                 self.ckp.log[-1, idx_data, idx_scale] /= len(d)
+                scale_to_sum_ssim[scale] /= len(d)
+
                 best = self.ckp.log.max(0)
                 self.ckp.write_log(
                     '[{} x{}]\tPSNR: {:.3f} (Best: {:.3f} @epoch {})'.format(
