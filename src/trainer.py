@@ -12,7 +12,7 @@ def init_wandb_logging(args):
     wandb.init(project=args.wandb_project_name, entity="midl21t1", config=args.__dict__)
 
 
-def add_test_wandb_logs(num_files, scale_to_sum_losses, scale_to_sum_psnr):
+def add_test_wandb_logs(num_files, scale_to_sum_losses, scale_to_sum_psnr, scale_to_sum_ssim):
     test_log_psnrs = {}
     test_mean_loss = 0
     for scale, sum_loss in scale_to_sum_losses.items():
@@ -26,6 +26,12 @@ def add_test_wandb_logs(num_files, scale_to_sum_losses, scale_to_sum_psnr):
     test_mean_psnr /= len(scale_to_sum_psnr.values())
     test_log_psnrs['mean_loss'] = test_mean_loss
     test_log_psnrs['mean_psnr'] = test_mean_psnr
+    for scale, sum_ssim in scale_to_sum_ssim.items():
+        test_mean_ssim += sum_ssim / num_files
+        test_log_ssims['ssim_scale_{scale}'] = sum_ssim / num_files
+    test_mean_ssim /= len(scale_to_sum_ssim.values())
+    test_log_ssim['mean_psnr'] = test_mean_ssim
+  
     wandb.log({'test': test_log_psnrs})
 
 
@@ -179,7 +185,7 @@ class Trainer():
             'Total: {:.2f}s\n'.format(timer_test.toc()), refresh=True
         )
 
-        add_test_wandb_logs(num_files, scale_to_sum_losses, scale_to_sum_psnr)
+        add_test_wandb_logs(num_files, scale_to_sum_losses, scale_to_sum_psnr, scale_to_sum_ssim)
 
         torch.set_grad_enabled(True)
 
