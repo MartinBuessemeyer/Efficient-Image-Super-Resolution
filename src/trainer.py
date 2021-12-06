@@ -134,6 +134,7 @@ class Trainer:
                     sr = self.model(lr, idx_scale)
                     time_diff = timer_test.toc()
                     time_diff /= hr.shape[0]
+
                     durations.append(time_diff)
                     loss = self.loss(sr, hr)
                     sr = utility.quantize(sr, self.args.rgb_range)
