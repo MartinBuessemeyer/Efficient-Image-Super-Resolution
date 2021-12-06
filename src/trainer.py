@@ -29,7 +29,7 @@ def add_test_wandb_logs(num_files, scale_to_sum_losses, scale_to_sum_psnr, scale
     test_mean_ssim = 0
     for scale, sum_ssim in scale_to_sum_ssim.items():
         test_mean_ssim += sum_ssim / num_files
-        test_log['ssim_scale_{scale}'] = sum_ssim / num_files
+        test_log[f'ssim_scale_{scale}'] = sum_ssim / num_files
     test_mean_ssim /= len(scale_to_sum_ssim.values())
     test_log['mean_psnr'] = test_mean_ssim
   
@@ -292,7 +292,7 @@ class Trainer():
                     '[{} x{}]\tSSIM: {:.3f}'.format(
                         d.dataset.name,
                         scale,
-                        test_log_ssims
+                        test_log_ssim
                     )
                 )
 
