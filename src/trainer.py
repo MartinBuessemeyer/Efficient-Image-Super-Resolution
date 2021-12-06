@@ -159,10 +159,10 @@ class Trainer():
                     )
                 )
                 self.ckp.write_log(
-                    '[{} x{}]\SSIM: {:.3f} (Best: {:.3f} @epoch {})'.format(
+                    '[{} x{}]\SSIM: {:.3f})'.format(
                         d.dataset.name,
                         scale,
-                       scale_to_sum_ssim / len(d),
+                       scale_to_sum_ssim[scale],
                     )
                 )
 
