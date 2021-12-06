@@ -138,7 +138,7 @@ class SRData(data.Dataset):
 
     def get_patch(self, lr, hr):
         scale = self.scale[self.idx_scale]
-        if self.train:
+        if self.train or self.args.batch_size_test != 1:
             lr, hr = common.get_patch(
                 lr, hr,
                 patch_size=self.args.patch_size,
