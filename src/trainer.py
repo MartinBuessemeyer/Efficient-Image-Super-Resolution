@@ -20,7 +20,7 @@ def add_test_wandb_logs(num_files, scale_to_sum_losses, scale_to_sum_psnr):
     test_mean_loss /= len(scale_to_sum_losses.values())
     test_mean_psnr = 0
     for scale, sum_psnr in scale_to_sum_psnr.items():
-        test_mean_loss += sum_psnr / num_files
+        test_mean_psnr += sum_psnr / num_files
         test_logs[f'psnr_scale_{scale}'] = sum_psnr / num_files
     test_mean_psnr /= len(scale_to_sum_psnr.values())
     test_logs['mean_loss'] = test_mean_loss
@@ -167,6 +167,55 @@ class Trainer():
         )
 
         add_test_wandb_logs(num_files, scale_to_sum_losses, scale_to_sum_psnr)
+
+        torch.set_grad_enabled(True)
+
+    def test(self):
+        torch.set_grad_enabled(False)
+
+        epoch = self.optimizer.get_last_epoch()
+        self.ckp.write_log('Test Results:')
+        test_log = torch.zeros(1, len(self.loader_test), len(self.scale))
+        self.model.eval()
+
+        timer_test = utility.timer()
+        if self.args.save_results: self.ckp.begin_background()
+        for idx_data, d in enumerate(self.loader_test):
+            for idx_scale, scale in enumerate(self.scale):
+                d.dataset.set_scale(idx_scale)
+                for lr, hr, filename in tqdm(d, ncols=80):
+                    lr, hr = self.prepare(lr, hr)
+                    sr = self.model(lr, idx_scale)
+                    sr = utility.quantize(sr, self.args.rgb_range)
+
+                    save_list = [sr]
+                    test_log += utility.calc_psnr(
+                        sr, hr, scale, self.args.rgb_range, dataset=d
+                    )
+                    if self.args.save_gt:
+                        save_list.extend([lr, hr])
+
+                    if self.args.save_results:
+                        self.ckp.save_results(d, filename[0], save_list, scale)
+
+                test_log[-1, idx_data, idx_scale] /= len(d)
+                best = test_log.max(0)
+                self.ckp.write_log(
+                    '[{} x{}]\tPSNR: {:.3f}'.format(
+                        d.dataset.name,
+                        scale,
+                        test_log[-1, idx_data, idx_scale]
+                    )
+                )
+
+        self.ckp.write_log('Forward: {:.2f}s\n'.format(timer_test.toc()))
+
+        if self.args.save_results:
+            self.ckp.end_background()
+
+        self.ckp.write_log(
+            'Total: {:.2f}s\n'.format(timer_test.toc()), refresh=True
+        )
 
         torch.set_grad_enabled(True)
 

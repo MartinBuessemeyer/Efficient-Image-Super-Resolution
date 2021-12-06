@@ -10,6 +10,7 @@ import imageio
 import torch
 import torch.utils.data as data
 
+
 class SRData(data.Dataset):
     def __init__(self, args, name='', train=True, benchmark=False):
         self.args = args
@@ -21,7 +22,7 @@ class SRData(data.Dataset):
         self.input_large = (args.model == 'VDSR')
         self.scale = args.scale
         self.idx_scale = 0
-        
+
         self._set_filesystem(args.dir_data)
         if args.ext.find('img') < 0:
             path_bin = os.path.join(self.apath, 'bin')
@@ -43,19 +44,19 @@ class SRData(data.Dataset):
                     ),
                     exist_ok=True
                 )
-            
+
             self.images_hr, self.images_lr = [], [[] for _ in self.scale]
             for h in list_hr:
                 b = h.replace(self.apath, path_bin)
                 b = b.replace(self.ext[0], '.pt')
                 self.images_hr.append(b)
-                self._check_and_load(args.ext, h, b, verbose=True) 
+                self._check_and_load(args.ext, h, b, verbose=True)
             for i, ll in enumerate(list_lr):
                 for l in ll:
                     b = l.replace(self.apath, path_bin)
                     b = b.replace(self.ext[1], '.pt')
                     self.images_lr[i].append(b)
-                    self._check_and_load(args.ext, l, b, verbose=True) 
+                    self._check_and_load(args.ext, l, b, verbose=True)
         if train:
             n_patches = args.batch_size * args.test_every
             n_images = len(args.data_train) * len(self.images_hr)
@@ -73,13 +74,16 @@ class SRData(data.Dataset):
         for f in names_hr:
             filename, _ = os.path.splitext(os.path.basename(f))
             for si, s in enumerate(self.scale):
-                names_lr[si].append(os.path.join(
-                    self.dir_lr, 'X{}/{}x{}{}'.format(
-                        s, filename, s, self.ext[1]
-                    )
-                ))
+                names_lr[si].append(self._get_lr_filepath(filename, s))
 
         return names_hr, names_lr
+
+    def _get_lr_filepath(self, hr_filename, scale):
+        return os.path.join(
+            self.dir_lr, 'X{}/{}x{}{}'.format(
+                scale, hr_filename, scale, self.ext[1]
+            )
+        )
 
     def _set_filesystem(self, dir_data):
         self.apath = os.path.join(dir_data, self.name)
