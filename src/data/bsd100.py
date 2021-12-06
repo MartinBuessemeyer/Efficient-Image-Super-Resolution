@@ -2,6 +2,7 @@ import os
 
 from data import common
 from data import srdata
+import glob
 
 import numpy as np
 
@@ -21,6 +22,7 @@ class BSD100(srdata.SRData):
         self.ext = ('.png', '.png')
 
     def _get_lr_filepath(self, hr_filename, scale):
+        lr_filename = '_'.join(hr_filename.split('_')[:3]) + f'_{scale}_LR{self.ext[1]}'
         return os.path.join(
-                    self.dir_lr, f'x{scale}', f'{hr_filename.replace("HR", "LR")}{self.ext[1]}'
+                    self.dir_lr, f'x{scale}', f'{lr_filename}'
                 )
