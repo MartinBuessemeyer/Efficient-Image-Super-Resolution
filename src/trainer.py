@@ -4,14 +4,19 @@ import torch
 import torch.nn.utils as utils
 import utility
 import wandb
+import numpy as np
 from tqdm import tqdm
 
 
 def init_wandb_logging(args):
-    wandb.init(project=args.wandb_project_name, entity="midl21t1", config=args.__dict__)
+    if not args.wandb_disable:
+        wandb.init(project=args.wandb_project_name, entity="midl21t1")
+        wandb.config.update(args)
 
 
-def add_test_wandb_logs(num_files, scale_to_sum_losses, scale_to_sum_psnr, mean_time_forward_pass, step_name):
+def add_test_wandb_logs(args, num_files, scale_to_sum_losses, scale_to_sum_psnr, mean_time_forward_pass, step_name, epoch):
+    if args.wandb_disable:
+        return
     test_logs = {}
     test_mean_loss = 0
     for scale, sum_loss in scale_to_sum_losses.items():
@@ -26,7 +31,7 @@ def add_test_wandb_logs(num_files, scale_to_sum_losses, scale_to_sum_psnr, mean_
     test_logs['mean_loss'] = test_mean_loss
     test_logs['mean_psnr'] = test_mean_psnr
     test_logs['mean_forward_pass_time'] = mean_time_forward_pass
-    wandb.log({step_name: test_logs})
+    wandb.log({step_name: test_logs}, step=epoch)
 
 
 class Trainer:
@@ -107,7 +112,7 @@ class Trainer:
         epoch = self.optimizer.get_last_epoch()
         self.ckp.write_log(f'\n{step_name}:')
         self.ckp.add_log(
-            torch.zeros(1, len(self.loader_validate), len(self.scale))
+            torch.zeros(1, len(loader), len(self.scale))
         )
         self.model.eval()
 
@@ -120,14 +125,15 @@ class Trainer:
         scale_to_sum_psnr = {scale: 0 for scale in self.scale}
         num_files = 0
 
-        for idx_data, d in enumerate(self.loader_validate):
+        for idx_data, d in enumerate(loader):
             for idx_scale, scale in enumerate(self.scale):
                 d.dataset.set_scale(idx_scale)
                 for lr, hr, filename in tqdm(d, ncols=80):
                     lr, hr = self.prepare(lr, hr)
                     timer_test.tic()
                     sr = self.model(lr, idx_scale)
-                    durations.append(timer_test.toc())
+                    time_diff = timer_test.toc()
+                    durations.append(time_diff)
                     loss = self.loss(sr, hr)
                     sr = utility.quantize(sr, self.args.rgb_range)
 
@@ -157,8 +163,8 @@ class Trainer:
                         best[1][idx_data, idx_scale] + 1
                     )
                 )
-        mean_time_forward_pass = torch.mean(durations)
-        self.ckp.write_log('Mean time forward pass: {:.2f}s\n'.format(mean_time_forward_pass))
+        mean_time_forward_pass = np.mean(durations)
+        self.ckp.write_log('Mean time forward pass: {:.5f}s\n'.format(mean_time_forward_pass))
         self.ckp.write_log('Saving...')
 
         if self.args.save_results:
@@ -171,7 +177,7 @@ class Trainer:
             'Total: {:.2f}s\n'.format(timer_test.toc()), refresh=True
         )
 
-        add_test_wandb_logs(num_files, scale_to_sum_losses, scale_to_sum_psnr, mean_time_forward_pass, step_name)
+        add_test_wandb_logs(self.args, num_files, scale_to_sum_losses, scale_to_sum_psnr, mean_time_forward_pass, step_name, epoch)
 
         torch.set_grad_enabled(True)
 

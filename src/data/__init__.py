@@ -26,7 +26,6 @@ class Data:
                 m = import_module('data.' + module_name.lower())
                 datasets.append(getattr(m, module_name)(args, name=d))
 
-            print(datasets)
             self.loader_train = dataloader.DataLoader(
                 MyConcatDataset(datasets),
                 batch_size=args.batch_size,
