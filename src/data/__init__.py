@@ -35,7 +35,7 @@ class Data:
                 num_workers=args.n_threads,
             )
 
-        self.loader_validate = self.get_evaluation_loader(args, args.data_validation)
+        self.loader_validate = self.get_evaluation_loader(args, args.data_validate)
         self.loader_test = self.get_evaluation_loader(args, args.data_test)
 
     def get_evaluation_loader(self, args, data_modules):
