@@ -1,20 +1,16 @@
-import os
-import math
-import time
 import datetime
+import math
+import os
+import time
 from multiprocessing import Process
 from multiprocessing import Queue
 
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-
-import numpy as np
 import imageio
-
+import numpy as np
 import torch
 import torch.optim as optim
 import torch.optim.lr_scheduler as lrs
+
 
 class timer():
     def __init__(self):
@@ -41,7 +37,8 @@ class timer():
     def reset(self):
         self.acc = 0
 
-class checkpoint():
+
+class checkpoint:
     def __init__(self, args):
         self.args = args
         self.ok = True
@@ -69,7 +66,7 @@ class checkpoint():
         for d in args.data_test:
             os.makedirs(self.get_path('results-{}'.format(d)), exist_ok=True)
 
-        open_type = 'a' if os.path.exists(self.get_path('log.txt'))else 'w'
+        open_type = 'a' if os.path.exists(self.get_path('log.txt')) else 'w'
         self.log_file = open(self.get_path('log.txt'), open_type)
         with open(self.get_path('config.txt'), open_type) as f:
             f.write(now + '\n\n')
@@ -85,9 +82,7 @@ class checkpoint():
     def save(self, trainer, epoch, is_best=False):
         trainer.model.save(self.get_path('model'), epoch, is_best=is_best)
         trainer.loss.save(self.dir)
-        trainer.loss.plot_loss(self.dir, epoch)
 
-        self.plot_psnr(epoch)
         trainer.optimizer.save(self.dir)
         torch.save(self.log, self.get_path('psnr_log.pt'))
 
@@ -104,25 +99,6 @@ class checkpoint():
     def done(self):
         self.log_file.close()
 
-    def plot_psnr(self, epoch):
-        axis = np.linspace(1, epoch, epoch)
-        for idx_data, d in enumerate(self.args.data_test):
-            label = 'SR on {}'.format(d)
-            fig = plt.figure()
-            plt.title(label)
-            for idx_scale, scale in enumerate(self.args.scale):
-                plt.plot(
-                    axis,
-                    self.log[:, idx_data, idx_scale].numpy(),
-                    label='Scale {}'.format(scale)
-                )
-            plt.legend()
-            plt.xlabel('Epochs')
-            plt.ylabel('PSNR')
-            plt.grid(True)
-            plt.savefig(self.get_path('test_{}.pdf'.format(d)))
-            plt.close(fig)
-
     def begin_background(self):
         self.queue = Queue()
 
@@ -132,12 +108,12 @@ class checkpoint():
                     filename, tensor = queue.get()
                     if filename is None: break
                     imageio.imwrite(filename, tensor.numpy())
-        
+
         self.process = [
             Process(target=bg_target, args=(self.queue,)) \
             for _ in range(self.n_processes)
         ]
-        
+
         for p in self.process: p.start()
 
     def end_background(self):
@@ -158,9 +134,11 @@ class checkpoint():
                 tensor_cpu = normalized.byte().permute(1, 2, 0).cpu()
                 self.queue.put(('{}{}.png'.format(filename, p), tensor_cpu))
 
+
 def quantize(img, rgb_range):
     pixel_range = 255 / rgb_range
     return img.mul(pixel_range).clamp(0, 255).round().div(pixel_range)
+
 
 def calc_psnr(sr, hr, scale, rgb_range, dataset=None):
     if hr.nelement() == 1: return 0
@@ -179,6 +157,7 @@ def calc_psnr(sr, hr, scale, rgb_range, dataset=None):
     mse = valid.pow(2).mean()
 
     return -10 * math.log10(mse)
+
 
 def make_optimizer(args, target):
     '''
@@ -226,12 +205,11 @@ def make_optimizer(args, target):
             self.scheduler.step()
 
         def get_lr(self):
-            return self.scheduler.get_lr()[0]
+            return self.scheduler.get_last_lr()[0]
 
         def get_last_epoch(self):
             return self.scheduler.last_epoch
-    
+
     optimizer = CustomOptimizer(trainable, **kwargs_optimizer)
     optimizer._register_scheduler(scheduler_class, **kwargs_scheduler)
     return optimizer
-

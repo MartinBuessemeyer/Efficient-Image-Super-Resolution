@@ -4,16 +4,22 @@ import torch
 import torch.nn.utils as utils
 import utility
 import wandb
+import numpy as np
 from tqdm import tqdm
 from pytorch_msssim import ssim
 
 
 def init_wandb_logging(args):
-    wandb.init(project=args.wandb_project_name, entity="midl21t1", config=args.__dict__)
+    if not args.wandb_disable:
+        wandb.init(project=args.wandb_project_name, entity="midl21t1")
+        wandb.config.update(args)
 
 
-def add_test_wandb_logs(num_files, scale_to_sum_losses, scale_to_sum_psnr, scale_to_sum_ssim):
-    test_log = {}
+
+def add_test_wandb_logs(args, num_files, scale_to_sum_losses, scale_to_sum_psnr, scale_to_sum_ssim, mean_time_forward_pass, step_name, epoch):
+    if args.wandb_disable:
+        return
+    test_logs = {}
     test_mean_loss = 0
     for scale, sum_loss in scale_to_sum_losses.items():
         test_mean_loss += sum_loss / num_files
@@ -24,25 +30,25 @@ def add_test_wandb_logs(num_files, scale_to_sum_losses, scale_to_sum_psnr, scale
         test_mean_psnr += sum_psnr / num_files
         test_log[f'psnr_scale_{scale}'] = sum_psnr / num_files
     test_mean_psnr /= len(scale_to_sum_psnr.values())
-    test_log['mean_loss'] = test_mean_loss
-    test_log['mean_psnr'] = test_mean_psnr
     test_mean_ssim = 0
     for scale, sum_ssim in scale_to_sum_ssim.items():
         test_mean_ssim += sum_ssim / num_files
         test_log[f'ssim_scale_{scale}'] = sum_ssim / num_files
     test_mean_ssim /= len(scale_to_sum_ssim.values())
-    test_log['mean_psnr'] = test_mean_ssim
-  
-    wandb.log({'test': test_log})
+    test_logs['mean_ssim'] = test_mean_ssim
+    test_logs['mean_loss'] = test_mean_loss
+    test_logs['mean_psnr'] = test_mean_psnr
+    test_logs['mean_forward_pass_time'] = mean_time_forward_pass
+    wandb.log({step_name: test_logs}, step=epoch)
 
-
-class Trainer():
+class Trainer:
     def __init__(self, args, loader, my_model, my_loss, ckp):
         self.args = args
         self.scale = args.scale
 
         self.ckp = ckp
         self.loader_train = loader.loader_train
+        self.loader_validate = loader.loader_validate
         self.loader_test = loader.loader_test
         self.model = my_model
         self.loss = my_loss
@@ -100,23 +106,24 @@ class Trainer():
             sum_loss += loss
 
         wandb.log({'train': {'loss': sum_loss / len(self.loader_train),
-                   'lr': self.optimizer.get_lr()}})
+                             'lr': self.optimizer.get_lr()}})
         wandb.watch(self.model)
 
         self.loss.end_log(len(self.loader_train))
         self.error_last = self.loss.log[-1, -1]
         self.optimizer.schedule()
 
-    def validate(self):
+    def test_or_validate(self, loader, step_name):
         torch.set_grad_enabled(False)
 
         epoch = self.optimizer.get_last_epoch()
-        self.ckp.write_log('\nEvaluation:')
+        self.ckp.write_log(f'\n{step_name}:')
         self.ckp.add_log(
-            torch.zeros(1, len(self.loader_test), len(self.scale))
+            torch.zeros(1, len(loader), len(self.scale))
         )
         self.model.eval()
 
+        durations = []
         timer_test = utility.timer()
         if self.args.save_results:
             self.ckp.begin_background()
@@ -126,12 +133,15 @@ class Trainer():
         scale_to_sum_ssim = {scale: 0 for scale in self.scale}
         num_files = 0
 
-        for idx_data, d in enumerate(self.loader_test):
+        for idx_data, d in enumerate(loader):
             for idx_scale, scale in enumerate(self.scale):
                 d.dataset.set_scale(idx_scale)
                 for lr, hr, filename in tqdm(d, ncols=80):
                     lr, hr = self.prepare(lr, hr)
+                    timer_test.tic()
                     sr = self.model(lr, idx_scale)
+                    time_diff = timer_test.toc()
+                    durations.append(time_diff)
                     loss = self.loss(sr, hr)
                     sr = utility.quantize(sr, self.args.rgb_range)
 
@@ -172,8 +182,8 @@ class Trainer():
                        scale_to_sum_ssim[scale],
                     )
                 )
-
-        self.ckp.write_log('Forward: {:.2f}s\n'.format(timer_test.toc()))
+        mean_time_forward_pass = np.mean(durations)
+        self.ckp.write_log('Mean time forward pass: {:.5f}s\n'.format(mean_time_forward_pass))
         self.ckp.write_log('Saving...')
 
         if self.args.save_results:
@@ -186,126 +196,16 @@ class Trainer():
             'Total: {:.2f}s\n'.format(timer_test.toc()), refresh=True
         )
 
-        add_test_wandb_logs(num_files, scale_to_sum_losses, scale_to_sum_psnr, scale_to_sum_ssim)
+    
+        add_test_wandb_logs(self.args, num_files, scale_to_sum_losses, scale_to_sum_psnr, scale_to_sum_ssim, mean_time_forward_pass, step_name, epoch)
 
         torch.set_grad_enabled(True)
+
+    def validate(self):
+        self.test_or_validate(self.loader_validate, 'validate')
 
     def test(self):
-        torch.set_grad_enabled(False)
-
-        epoch = self.optimizer.get_last_epoch()
-        self.ckp.write_log('Test Results:')
-        test_log_psnr = torch.zeros(1, len(self.loader_test), len(self.scale))
-        test_log_ssim = torch.zeros(1, len(self.loader_test), len(self.scale))
-        self.model.eval()
-
-        timer_test = utility.timer()
-        if self.args.save_results: self.ckp.begin_background()
-        for idx_data, d in enumerate(self.loader_test):
-            for idx_scale, scale in enumerate(self.scale):
-                d.dataset.set_scale(idx_scale)
-                for lr, hr, filename in tqdm(d, ncols=80):
-                    lr, hr = self.prepare(lr, hr)
-                    sr = self.model(lr, idx_scale)
-                    sr = utility.quantize(sr, self.args.rgb_range)
-
-                    save_list = [sr]
-                    test_log_psnr += utility.calc_psnr(
-                        sr, hr, scale, self.args.rgb_range, dataset=d
-                    )
-                    test_log_ssim += ssim(sr, hr, self.args.rgb_range)
-                    if self.args.save_gt:
-                        save_list.extend([lr, hr])
-
-                    if self.args.save_results:
-                        self.ckp.save_results(d, filename[0], save_list, scale)
-
-                test_log_psnr[-1, idx_data, idx_scale] /= len(d)
-                test_log_ssim[-1, idx_data, idx_scale] /= len(d)
-                self.ckp.write_log(
-                    '[{} x{}]\tPSNR: {:.3f}'.format(
-                        d.dataset.name,
-                        scale,
-                        test_log_psnr[-1, idx_data, idx_scale]
-                    )
-                )
-                self.ckp.write_log(
-                    '[{} x{}]\tSSIM: {:.3f}'.format(
-                        d.dataset.name,
-                        scale,
-                        test_log_ssim[-1, idx_data, idx_scale]
-                    )
-                )
-
-        self.ckp.write_log('Forward: {:.2f}s\n'.format(timer_test.toc()))
-
-        if self.args.save_results:
-            self.ckp.end_background()
-
-        self.ckp.write_log(
-            'Total: {:.2f}s\n'.format(timer_test.toc()), refresh=True
-        )
-
-        torch.set_grad_enabled(True)
-
-    def test(self):
-        torch.set_grad_enabled(False)
-
-        epoch = self.optimizer.get_last_epoch()
-        self.ckp.write_log('Test Results:')
-        test_log_psnr = torch.zeros(1, len(self.loader_test), len(self.scale))
-        self.model.eval()
-
-        timer_test = utility.timer()
-        if self.args.save_results: self.ckp.begin_background()
-        for idx_data, d in enumerate(self.loader_test):
-            for idx_scale, scale in enumerate(self.scale):
-                d.dataset.set_scale(idx_scale)
-                test_log_ssim = 0
-                for lr, hr, filename in tqdm(d, ncols=80):
-                    lr, hr = self.prepare(lr, hr)
-                    sr = self.model(lr, idx_scale)
-                    sr = utility.quantize(sr, self.args.rgb_range)
-
-                    save_list = [sr]
-                    test_log_psnr += utility.calc_psnr(
-                        sr, hr, scale, self.args.rgb_range, dataset=d
-                    )
-                    test_log_ssim += ssim(sr, hr, self.args.rgb_range)
-                    if self.args.save_gt:
-                        save_list.extend([lr, hr])
-
-                    if self.args.save_results:
-                        self.ckp.save_results(d, filename[0], save_list, scale)
-
-                test_log_psnr[-1, idx_data, idx_scale] /= len(d)
-                test_log_ssim /= len(d)
-                best = test_log_psnr.max(0)
-                self.ckp.write_log(
-                    '[{} x{}]\tPSNR: {:.3f}'.format(
-                        d.dataset.name,
-                        scale,
-                        test_log_psnr[-1, idx_data, idx_scale]
-                    )
-                )
-                self.ckp.write_log(
-                    '[{} x{}]\tSSIM: {:.3f}'.format(
-                        d.dataset.name,
-                        scale,
-                        test_log_ssim
-                    )
-                )
-
-        self.ckp.write_log('Forward: {:.2f}s\n'.format(timer_test.toc()))
-
-        if self.args.save_results:
-            self.ckp.end_background()
-
-        self.ckp.write_log(
-            'Total: {:.2f}s\n'.format(timer_test.toc()), refresh=True
-        )
-
-        torch.set_grad_enabled(True)
+        self.test_or_validate(self.loader_test, 'test')
 
     def prepare(self, *args):
         device = torch.device('cpu' if self.args.cpu else 'cuda')
@@ -322,4 +222,4 @@ class Trainer():
             return True
         else:
             epoch = self.optimizer.get_last_epoch() + 1
-            return epoch >= self.args.epochs
+            return epoch > self.args.epochs
