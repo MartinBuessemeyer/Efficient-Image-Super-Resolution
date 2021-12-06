@@ -230,7 +230,7 @@ class Trainer():
                     )
                 )
                 self.ckp.write_log(
-                    '[{} x{}]\SSIM: {:.3f}'.format(
+                    '[{} x{}]\tSSIM: {:.3f}'.format(
                         d.dataset.name,
                         scale,
                         test_log_ssim[-1, idx_data, idx_scale]
