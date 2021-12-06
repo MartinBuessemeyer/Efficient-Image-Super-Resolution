@@ -6,6 +6,7 @@ import utility
 import wandb
 import numpy as np
 from tqdm import tqdm
+from pytorch_msssim import ssim
 
 
 def init_wandb_logging(args):
@@ -14,7 +15,8 @@ def init_wandb_logging(args):
         wandb.config.update(args)
 
 
-def add_test_wandb_logs(args, num_files, scale_to_sum_losses, scale_to_sum_psnr, mean_time_forward_pass, step_name, epoch):
+
+def add_test_wandb_logs(args, num_files, scale_to_sum_losses, scale_to_sum_psnr, scale_to_sum_ssim, mean_time_forward_pass, step_name, epoch):
     if args.wandb_disable:
         return
     test_logs = {}
@@ -28,11 +30,16 @@ def add_test_wandb_logs(args, num_files, scale_to_sum_losses, scale_to_sum_psnr,
         test_mean_psnr += sum_psnr / num_files
         test_logs[f'psnr_scale_{scale}'] = sum_psnr / num_files
     test_mean_psnr /= len(scale_to_sum_psnr.values())
+    test_mean_ssim = 0
+    for scale, sum_ssim in scale_to_sum_ssim.items():
+        test_mean_ssim += sum_ssim / num_files
+        test_logs[f'ssim_scale_{scale}'] = sum_ssim / num_files
+    test_mean_ssim /= len(scale_to_sum_ssim.values())
+    test_logs['mean_ssim'] = test_mean_ssim
     test_logs['mean_loss'] = test_mean_loss
     test_logs['mean_psnr'] = test_mean_psnr
     test_logs['mean_forward_pass_time'] = mean_time_forward_pass
     wandb.log({step_name: test_logs}, step=epoch)
-
 
 class Trainer:
     def __init__(self, args, loader, my_model, my_loss, ckp):
@@ -123,6 +130,7 @@ class Trainer:
 
         scale_to_sum_losses = {scale: 0 for scale in self.scale}
         scale_to_sum_psnr = {scale: 0 for scale in self.scale}
+        scale_to_sum_ssim = {scale: 0 for scale in self.scale}
         num_files = 0
 
         for idx_data, d in enumerate(loader):
@@ -143,6 +151,7 @@ class Trainer:
                     psnr = utility.calc_psnr(
                         sr, hr, scale, self.args.rgb_range, dataset=d
                     )
+                    my_ssim = ssim(sr, hr, val_range=self.args.rgb_range)
                     self.ckp.log[-1, idx_data, idx_scale] += psnr
                     if self.args.save_gt:
                         save_list.extend([lr, hr])
@@ -152,9 +161,12 @@ class Trainer:
 
                     scale_to_sum_losses[scale] += loss
                     scale_to_sum_psnr[scale] += psnr
+                    scale_to_sum_ssim[scale] += my_ssim
                     num_files += 1
 
                 self.ckp.log[-1, idx_data, idx_scale] /= len(d)
+                scale_to_sum_ssim[scale] /= len(d)
+
                 best = self.ckp.log.max(0)
                 self.ckp.write_log(
                     '[{} x{}]\tPSNR: {:.3f} (Best: {:.3f} @epoch {})'.format(
@@ -163,6 +175,13 @@ class Trainer:
                         self.ckp.log[-1, idx_data, idx_scale],
                         best[0][idx_data, idx_scale],
                         best[1][idx_data, idx_scale] + 1
+                    )
+                )
+                self.ckp.write_log(
+                    '[{} x{}]\tSSIM: {:.3f}'.format(
+                        d.dataset.name,
+                        scale,
+                       scale_to_sum_ssim[scale],
                     )
                 )
         mean_time_forward_pass = np.mean(durations)
@@ -179,7 +198,8 @@ class Trainer:
             'Total: {:.2f}s\n'.format(timer_test.toc()), refresh=True
         )
 
-        add_test_wandb_logs(self.args, num_files, scale_to_sum_losses, scale_to_sum_psnr, mean_time_forward_pass, step_name, epoch)
+    
+        add_test_wandb_logs(self.args, num_files, scale_to_sum_losses, scale_to_sum_psnr, scale_to_sum_ssim, mean_time_forward_pass, step_name, epoch)
 
         torch.set_grad_enabled(True)
 
