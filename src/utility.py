@@ -41,7 +41,7 @@ class timer():
     def reset(self):
         self.acc = 0
 
-class checkpoint():
+class checkpoint:
     def __init__(self, args):
         self.args = args
         self.ok = True
