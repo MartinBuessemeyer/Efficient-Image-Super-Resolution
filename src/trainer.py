@@ -107,7 +107,7 @@ class Trainer:
 
         wandb.log({'train': {'loss': sum_loss / len(self.loader_train),
                              'lr': self.optimizer.get_lr()}})
-        wandb.watch(self.model)
+        #wandb.watch(self.model)
 
         self.loss.end_log(len(self.loader_train))
         self.error_last = self.loss.log[-1, -1]
