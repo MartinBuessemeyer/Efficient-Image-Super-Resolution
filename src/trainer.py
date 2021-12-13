@@ -120,9 +120,9 @@ class Trainer:
         if self.args.save_results:
             self.ckp.begin_background()
 
-        dataset_to_scale_to_sum_losses = {dataset.datset.name: {scale: 0 for scale in self.scale} for dataset in loader}
-        dataset_to_scale_to_sum_psnr = {dataset.datset.name: {scale: 0 for scale in self.scale} for dataset in loader}
-        dataset_to_scale_to_sum_ssim = {dataset.datset.name: {scale: 0 for scale in self.scale} for dataset in loader}
+        dataset_to_scale_to_sum_losses = {dataset.dataset.name: {scale: 0 for scale in self.scale} for dataset in loader}
+        dataset_to_scale_to_sum_psnr = {dataset.dataset.name: {scale: 0 for scale in self.scale} for dataset in loader}
+        dataset_to_scale_to_sum_ssim = {dataset.dataset.name: {scale: 0 for scale in self.scale} for dataset in loader}
 
         for idx_data, d in enumerate(loader):
             for idx_scale, scale in enumerate(self.scale):
