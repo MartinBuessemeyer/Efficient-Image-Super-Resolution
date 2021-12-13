@@ -49,6 +49,7 @@ class Trainer:
         self.loss = my_loss
         self.optimizer = utility.make_optimizer(args, self.model)
         self.epochs_since_pruning = 0
+        self.epochs_before_pruning = args.epochs_before_pruning
         init_wandb_logging(args)
 
         if self.args.load != '':
@@ -58,7 +59,7 @@ class Trainer:
 
     def train(self):
         self.epochs_since_pruning += 1
-        if self.epochs_since_pruning >= 5:
+        if self.epochs_since_pruning >= epochs_before_pruning:
             self.epochs_since_pruning = 0
             self.prune_model()
     

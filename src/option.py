@@ -103,6 +103,8 @@ parser.add_argument('--gan_k', type=int, default=1,
                     help='k value for adversarial loss')
 parser.add_argument('--batch_size_test', type=int, default=1,
                     help='input batch size for testing')
+parser.add_argument('--epochs_before_pruning', type=int, default=180,
+                    help='epochs to train before pruning')
 
 # Optimization specifications
 parser.add_argument('--lr', type=float, default=1e-4,
