@@ -25,7 +25,7 @@ def add_test_wandb_logs(args, dataset_to_scale_to_sum_losses, dataset_to_scale_t
     def add_to_testlog(metric, metric_dict):
         for dataset, values_by_scale in metric_dict.items():
             for scale, sum_metric in values_by_scale.items():
-                test_logs[f'{dataset}_{metric}_scale_{scale}'] = metric
+                test_logs[f'{dataset}_{metric}_scale_{scale}'] = sum_metric
 
     add_to_testlog("loss", dataset_to_scale_to_sum_losses)
     add_to_testlog("psnr", dataset_to_scale_to_sum_psnr)
