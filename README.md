@@ -2,6 +2,12 @@
 
 ## SLURM 
 
+#### Execute Trainings run / demo.sh
+
+1. Adjust the src/demo.sh
+2. (check if you have to do this ) Adjust the mounting in run-training.sh: e.g. server 03 has no ssd1 only ssd.
+3. sbatch -o <training_name>.txt -w fb10dl<machine> --gres gpu:1 -p training run-training.sh
+
 #### Execute container
 `srun -w fb10dl06 --gres gpu:1 --container-image /enroot_share/midl21t1/eisr.sqsh --container-mounts=/home/midl21t1/Efficient-Image-Super-Resolution:/home/midl21t1/Efficient-Image-Super-Resolution,/mnt/ssd1/midl21t1/datasets/:/mnt/ssd1/midl21t1/datasets/ --container-workdir=/home/midl21t1/Efficient-Image-Super-Resolution --container-writable --pty bash`
 
