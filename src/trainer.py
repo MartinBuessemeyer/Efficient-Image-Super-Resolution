@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import torch.nn.utils as utils
 import wandb
-from pytorch_msssim import ssim
+from skimage.metrics import structural_similarity, peak_signal_noise_ratio
 from tqdm import tqdm
 
 import utility
@@ -130,21 +130,28 @@ class Trainer:
             for idx_scale, scale in enumerate(self.scale):
                 d.dataset.set_scale(idx_scale)
                 for lr, hr, filename in tqdm(d, ncols=80):
+                    batch_size = lr.size()[0]
                     lr, hr = self.prepare(lr, hr)
                     timer_test.tic()
                     sr = self.model(lr, idx_scale)
                     time_diff = timer_test.toc()
-                    time_diff /= hr.shape[0]
+                    time_diff /= batch_size
 
                     durations.append(time_diff)
                     loss = self.loss(sr, hr)
                     sr = utility.quantize(sr, self.args.rgb_range)
-
                     save_list = [sr]
-                    psnr = utility.calc_psnr(
-                        sr, hr, scale, self.args.rgb_range, dataset=d
-                    )
-                    my_ssim = ssim(sr, hr, data_range=self.args.rgb_range)
+
+                    ssim = 0
+                    psnr = 0
+                    for batch_idx in range(batch_size):
+                        sr_numpy = sr[batch_idx, ...].detach().cpu().numpy()
+                        hr_numpy = hr[batch_idx, ...].detach().cpu().numpy()
+                        ssim += structural_similarity(sr_numpy, hr_numpy, channel_axis=0, data_range=self.args.rgb_range)
+                        psnr += peak_signal_noise_ratio(sr_numpy, hr_numpy, data_range=self.args.rgb_range)
+                    ssim /= batch_size
+                    psnr /= batch_size
+
                     self.ckp.log[-1, idx_data, idx_scale] += psnr
                     if self.args.save_gt:
                         save_list.extend([lr, hr])
@@ -154,7 +161,7 @@ class Trainer:
 
                     dataset_to_scale_to_sum_losses[d.dataset.name][scale] += loss
                     dataset_to_scale_to_sum_psnr[d.dataset.name][scale] += psnr
-                    dataset_to_scale_to_sum_ssim[d.dataset.name][scale] += my_ssim
+                    dataset_to_scale_to_sum_ssim[d.dataset.name][scale] += ssim
 
                 self.ckp.log[-1, idx_data, idx_scale] /= len(d)
                 dataset_to_scale_to_sum_losses[d.dataset.name][scale] /= len(d)
