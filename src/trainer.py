@@ -59,7 +59,7 @@ class Trainer:
 
     def train(self):
         self.epochs_since_pruning += 1
-        if self.epochs_since_pruning >= epochs_before_pruning:
+        if self.epochs_since_pruning >= self.args.epochs_before_pruning:
             self.epochs_since_pruning = 0
             self.prune_model()
     
