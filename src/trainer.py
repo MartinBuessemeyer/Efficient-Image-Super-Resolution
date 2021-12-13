@@ -61,6 +61,7 @@ class Trainer:
         if self.epochs_since_pruning >= 5:
             self.epochs_since_pruning = 0
             self.prune_model()
+            self.valid
     
         self.loss.step()
         epoch = self.optimizer.get_last_epoch() + 1
@@ -228,6 +229,7 @@ class Trainer:
             return epoch > self.args.epochs
 
     def prune_model(self):
-        for block in [self.model.B1, self.model.B2, self.model.B3, self.model.B4]:
+        model = self.model.model
+        for block in [model.B1, model.B2, model.B3, model.B4]:
             for srb in [block.srb1, block.srb2, block.srb3]:
-                prune.ln_structured(srb.conv3,"weight", amount=0.1, n=1, dim=0)
+                prune.ln_structured(srb.conv3.conv,"weight", amount=0.1, n=1, dim=0)
