@@ -57,9 +57,9 @@ class Trainer:
         self.error_last = 1e8
 
     def train(self):
-        epochs_since_pruning += 1
-        if epochs_since_pruning >= 5:
-            epochs_since_pruning = 0
+        self.epochs_since_pruning += 1
+        if self.epochs_since_pruning >= 5:
+            self.epochs_since_pruning = 0
             self.prune_model()
     
         self.loss.step()
