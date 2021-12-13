@@ -5,6 +5,7 @@ import torch
 import torch.nn.utils as utils
 import wandb
 from pytorch_msssim import ssim
+from skimage.measure import compare_ssim
 from tqdm import tqdm
 
 import utility
@@ -144,7 +145,7 @@ class Trainer:
                     psnr = utility.calc_psnr(
                         sr, hr, scale, self.args.rgb_range, dataset=d
                     )
-                    my_ssim = ssim(sr, hr, data_range=self.args.rgb_range)
+                    my_ssim = compare_ssim(sr, hr)
                     self.ckp.log[-1, idx_data, idx_scale] += psnr
                     if self.args.save_gt:
                         save_list.extend([lr, hr])
