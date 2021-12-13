@@ -61,7 +61,6 @@ class Trainer:
         if self.epochs_since_pruning >= 5:
             self.epochs_since_pruning = 0
             self.prune_model()
-            self.valid
     
         self.loss.step()
         epoch = self.optimizer.get_last_epoch() + 1
