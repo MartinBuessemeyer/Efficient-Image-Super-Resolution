@@ -27,7 +27,7 @@ def add_test_wandb_logs(args, dataset_to_scale_to_sum_losses, dataset_to_scale_t
             for scale, sum_metric in values_by_scale.items():
                 test_logs[f'{dataset}_{metric}_scale_{scale}'] = sum_loss
 
-    add_to_testlog("loss" dataset_to_scale_to_sum_losses)
+    add_to_testlog("loss", dataset_to_scale_to_sum_losses)
     add_to_testlog("psnr", dataset_to_scale_to_sum_psnr)
     add_to_testlog("ssim", dataset_to_scale_to_sum_ssim)
     
@@ -100,7 +100,7 @@ class Trainer:
 
         wandb.log({'train': {'loss': sum_loss / len(self.loader_train),
                              'lr': self.optimizer.get_lr()}})
-                             
+
         self.loss.end_log(len(self.loader_train))
         self.error_last = self.loss.log[-1, -1]
         self.optimizer.schedule()
