@@ -3,6 +3,7 @@ from decimal import Decimal
 import numpy as np
 import torch
 import torch.nn.utils as utils
+import torch.nn.utils.prune as prune
 import wandb
 from pytorch_msssim import ssim
 from tqdm import tqdm
@@ -47,6 +48,7 @@ class Trainer:
         self.model = my_model
         self.loss = my_loss
         self.optimizer = utility.make_optimizer(args, self.model)
+        self.epochs_since_pruning = 0
         init_wandb_logging(args)
 
         if self.args.load != '':
@@ -55,6 +57,11 @@ class Trainer:
         self.error_last = 1e8
 
     def train(self):
+        epochs_since_pruning += 1
+        if epochs_since_pruning >= 5:
+            epochs_since_pruning = 0
+            self.prune_model()
+    
         self.loss.step()
         epoch = self.optimizer.get_last_epoch() + 1
         lr = self.optimizer.get_lr()
@@ -219,3 +226,8 @@ class Trainer:
         else:
             epoch = self.optimizer.get_last_epoch() + 1
             return epoch > self.args.epochs
+
+    def prune_model(self):
+        for block in [model.B1, model.B2, model.B3, model.B4]:
+            for srb in [block.srb1, block.srb2, block.srb3]:
+                prune.ln_structured(srb.conv3,"weight", amount=0.1, n=1, dim=0)
