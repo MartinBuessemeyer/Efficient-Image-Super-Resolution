@@ -150,6 +150,7 @@ class Trainer:
                         ssim += structural_similarity(sr_numpy, hr_numpy, channel_axis=0, data_range=self.args.rgb_range)
                         psnr += peak_signal_noise_ratio(sr_numpy, hr_numpy, data_range=self.args.rgb_range)
                     ssim /= batch_size
+                    psnr /= batch_size
 
                     self.ckp.log[-1, idx_data, idx_scale] += psnr
                     if self.args.save_gt:
