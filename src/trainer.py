@@ -62,7 +62,7 @@ class Trainer:
         if self.epochs_since_pruning >= self.epochs_before_pruning:
             self.epochs_since_pruning = 0
             self.model.model.prune()
-    
+
         self.loss.step()
         epoch = self.optimizer.get_last_epoch() + 1
         lr = self.optimizer.get_lr()
@@ -107,8 +107,9 @@ class Trainer:
 
             sum_loss += loss
 
-        wandb.log({'train': {'loss': sum_loss / len(self.loader_train),
-                             'lr': self.optimizer.get_lr()}})
+        if not self.args.wandb_disable:
+            wandb.log({'train': {'loss': sum_loss / len(self.loader_train),
+                                 'lr': self.optimizer.get_lr()}})
 
         self.loss.end_log(len(self.loader_train))
         self.error_last = self.loss.log[-1, -1]
@@ -155,7 +156,8 @@ class Trainer:
                     for batch_idx in range(batch_size):
                         sr_numpy = sr[batch_idx, ...].detach().cpu().numpy()
                         hr_numpy = hr[batch_idx, ...].detach().cpu().numpy()
-                        ssim += structural_similarity(sr_numpy, hr_numpy, channel_axis=0, data_range=self.args.rgb_range)
+                        ssim += structural_similarity(sr_numpy, hr_numpy, channel_axis=0,
+                                                      data_range=self.args.rgb_range)
                         psnr += peak_signal_noise_ratio(sr_numpy, hr_numpy, data_range=self.args.rgb_range)
                     ssim /= batch_size
                     psnr /= batch_size
