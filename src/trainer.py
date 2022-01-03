@@ -52,6 +52,7 @@ class Trainer:
         self.epochs_since_pruning = 0
         self.epochs_before_pruning = args.epochs_before_pruning
         init_wandb_logging(args)
+        self.pruning_counter = 0
 
         if self.args.load != '':
             self.optimizer.load(ckp.dir, epoch=len(ckp.log))
@@ -63,9 +64,10 @@ class Trainer:
         if self.epochs_since_pruning >= self.epochs_before_pruning:
             self.epochs_since_pruning = 0
             self.model.model.prune()
+            self.pruning_counter += 1
             x = torch.ones_like((1, 480, 360, 3))
             y = model(x)
-            make_dot(y.mean(), params=dict(model.named_parameters()))
+            make_dot(y.mean(), params=dict(model.named_parameters())).render("model_plot_"+pruning_counter, format="png")
 
     
         self.loss.step()
