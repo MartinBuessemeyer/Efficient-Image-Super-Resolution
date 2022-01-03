@@ -65,7 +65,7 @@ class Trainer:
             self.epochs_since_pruning = 0
             self.model.model.prune()
             self.pruning_counter += 1
-            x = torch.ones_like((1, 480, 360, 3))
+            x = torch.ones_like(torch.empty(1, 480, 360, 3))
             y = model(x)
             make_dot(y.mean(), params=dict(model.named_parameters())).render("model_plot_"+pruning_counter, format="png")
 
