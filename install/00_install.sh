@@ -8,6 +8,7 @@ RUN apt-get -y install \
     build-essential \
     cmake \
     git \
+    graphviz \
     python3-dev \
     python3-setuptools \
     python3-pip \
