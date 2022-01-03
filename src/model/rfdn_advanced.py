@@ -66,4 +66,22 @@ class RFDNAdvanced(nn.Module):
     def prune(self):
         for block in [self.B1, self.B2, self.B3, self.B4]:
             for srb in [block.srb1, block.srb2, block.srb3]:
-                prune.ln_structured(srb.conv3.conv,"weight", amount=0.1, n=1, dim=0)
+                eval_conv = srb.get_equivalent_conv_layer()
+                eval_conv = prune.ln_structured(eval_conv,"weight", amount=0.1, n=1, dim=0)
+                num_filters, num_input_channels, h, w = eval_conv.shape
+                mask = eval_conv.weight.sum(dim=(num_input_channels, h, w)) == 0
+                # TODO CAUTION UNTESTED
+                new_weight = []
+                new_bias = []
+                for kernel_idx, delete_kernel in enumerate(mask):
+                    if not delete_kernel:
+                        new_weight.append(eval_conv.weight[kernel_idx, ...])
+                        new_weight.append(eval_conv.bias[new_bias, ...])
+                eval_conv = torch.nn.Conv2d(len(new_weight), num_input_channels, h, w)
+                eval_conv.weight = torch.tensor(new_weight)
+                eval_conv.bias = torch.tensor(new_bias)
+
+                next_distilled_layer = srb.next_distilled_layer
+                next_srb_block = srb.next_srb_block
+
+

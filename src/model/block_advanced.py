@@ -136,13 +136,15 @@ class ESA(nn.Module):
         return x * m
 
 class SRB(nn.Module):
-    def __init__(self, in_channels, out_channels, activation, deploy=False):
+    def __init__(self, in_channels, out_channels, activation, next_distilled_layer, next_srb_block, deploy=False):
         super(SRB, self).__init__()
 
         self.activation = activation
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.deploy = deploy
+        self.next_distilled_layer = next_distilled_layer
+        self.next_srb_block = next_srb_block
 
         if self.deploy:
             self.reparam = conv_layer(in_channels, out_channels, 3)
@@ -162,11 +164,16 @@ class SRB(nn.Module):
         
         return residual
 
-    def get_equivalent_kernel_and_bias(self):
+    def get_equivalent_conv_layer(self):
         kernel_3x3, bias_3x3 = self._fuse_bn_tensor(self.conv3)
         kernel_1x1, bias_1x1 = self._fuse_bn_tensor(self.conv1)
         kernel_id, bias_id = self._fuse_bn_tensor(self.identity)
-        return kernel_3x3 + self.pad_1x1_to_3x3_tensor(kernel_1x1) + kernel_id, bias_3x3 + bias_1x1 + bias_id
+        res_kernel = kernel_3x3 + self.pad_1x1_to_3x3_tensor(kernel_1x1) + kernel_id
+        res_bias = bias_3x3 + bias_1x1 + bias_id
+        res_conv = conv_layer(self.in_channels, self.out_channels, 3)
+        res_conv.weight = res_kernel
+        res_conv.bias = res_bias
+        return res_conv
 
     def pad_1x1_to_3x3_tensor(self, kernel_1x1):
         if kernel_1x1 is None:
@@ -205,10 +212,7 @@ class SRB(nn.Module):
     def switch_to_deploy(self):
         if hasattr(self, 'reparam'):
             return
-        kernel, bias = self.get_equivalent_kernel_and_bias()
-        self.reparam = conv_layer(self.in_channels, self.out_channels, 3)
-        self.reparam.weight.data = kernel
-        self.reparam.bias.data = bias
+        self.reparam = self.get_equivalent_conv_layer()
         for para in self.parameters():
             para.detach_()
         self.__delattr__('conv3')
@@ -230,23 +234,21 @@ class RFDB(nn.Module):
         self.activation = activation('lrelu', neg_slope=0.05)
 
         self.distilled1 = conv_layer(in_channels, self.distilled_channels, 1)
-        self.srb1 = SRB(in_channels, self.remaining_channels, self.activation)
-
         self.distilled2 = conv_layer(
             self.remaining_channels, self.distilled_channels, 1)
-        self.srb2 = SRB(
-            self.remaining_channels, self.remaining_channels, self.activation)
-
         self.distilled3 = conv_layer(
             self.remaining_channels, self.distilled_channels, 1)
-        self.srb3 = SRB(
-            self.remaining_channels, self.remaining_channels, self.activation)
-
         self.distilled4 = conv_layer(
             self.remaining_channels, self.distilled_channels, 3)
 
-        self.distilled = conv_layer(
-            self.distilled_channels * 4, in_channels, 1)
+        self.srb3 = SRB(
+            self.remaining_channels, self.remaining_channels, self.activation, self.distilled4, None)
+
+        self.srb2 = SRB(
+            self.remaining_channels, self.remaining_channels, self.activation, self.distilled3, self.srb3)
+
+        self.srb1 = SRB(in_channels, self.remaining_channels, self.activation, self.distilled2, self.srb3)
+
         self.esa = ESA(in_channels, nn.Conv2d)
 
     def forward(self, input):
