@@ -3,6 +3,7 @@ from decimal import Decimal
 import numpy as np
 import torch
 import torch.nn.utils as utils
+import torch.nn.utils.prune as prune
 import wandb
 from skimage.metrics import structural_similarity, peak_signal_noise_ratio
 from tqdm import tqdm
@@ -47,6 +48,8 @@ class Trainer:
         self.model = my_model
         self.loss = my_loss
         self.optimizer = utility.make_optimizer(args, self.model)
+        self.epochs_since_pruning = 0
+        self.epochs_before_pruning = args.epochs_before_pruning
         init_wandb_logging(args)
 
         if self.args.load != '':
@@ -55,6 +58,11 @@ class Trainer:
         self.error_last = 1e8
 
     def train(self):
+        self.epochs_since_pruning += 1
+        if self.epochs_since_pruning >= self.epochs_before_pruning:
+            self.epochs_since_pruning = 0
+            self.model.model.prune()
+    
         self.loss.step()
         epoch = self.optimizer.get_last_epoch() + 1
         lr = self.optimizer.get_lr()
