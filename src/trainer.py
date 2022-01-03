@@ -7,6 +7,7 @@ import torch.nn.utils.prune as prune
 import wandb
 from skimage.metrics import structural_similarity, peak_signal_noise_ratio
 from tqdm import tqdm
+from torchviz import make_dot
 
 import utility
 
@@ -51,6 +52,9 @@ class Trainer:
         self.epochs_since_pruning = 0
         self.epochs_before_pruning = args.epochs_before_pruning
         init_wandb_logging(args)
+        self.pruning_counter = 0
+        self.device = torch.device('cpu' if self.args.cpu else 'cuda')
+
 
         if self.args.load != '':
             self.optimizer.load(ckp.dir, epoch=len(ckp.log))
@@ -62,7 +66,12 @@ class Trainer:
         if self.epochs_since_pruning >= self.epochs_before_pruning:
             self.epochs_since_pruning = 0
             self.model.model.prune()
+            self.pruning_counter += 1
+            x = torch.ones_like(torch.empty(1, 3, 480, 360), device=self.device)
+            y = self.model.model(x)
+            make_dot(y.mean(), params=dict(self.model.model.named_parameters())).render("model_plot_"+str(pruning_counter), format="png")
 
+    
         self.loss.step()
         epoch = self.optimizer.get_last_epoch() + 1
         lr = self.optimizer.get_lr()
@@ -107,9 +116,8 @@ class Trainer:
 
             sum_loss += loss
 
-        if not self.args.wandb_disable:
-            wandb.log({'train': {'loss': sum_loss / len(self.loader_train),
-                                 'lr': self.optimizer.get_lr()}})
+        wandb.log({'train': {'loss': sum_loss / len(self.loader_train),
+                             'lr': self.optimizer.get_lr()}})
 
         self.loss.end_log(len(self.loader_train))
         self.error_last = self.loss.log[-1, -1]
@@ -156,8 +164,7 @@ class Trainer:
                     for batch_idx in range(batch_size):
                         sr_numpy = sr[batch_idx, ...].detach().cpu().numpy()
                         hr_numpy = hr[batch_idx, ...].detach().cpu().numpy()
-                        ssim += structural_similarity(sr_numpy, hr_numpy, channel_axis=0,
-                                                      data_range=self.args.rgb_range)
+                        ssim += structural_similarity(sr_numpy, hr_numpy, channel_axis=0, data_range=self.args.rgb_range)
                         psnr += peak_signal_noise_ratio(sr_numpy, hr_numpy, data_range=self.args.rgb_range)
                     ssim /= batch_size
                     psnr /= batch_size
@@ -221,11 +228,10 @@ class Trainer:
         self.test_or_validate(self.loader_test, 'test')
 
     def prepare(self, *args):
-        device = torch.device('cpu' if self.args.cpu else 'cuda')
 
         def _prepare(tensor):
             if self.args.precision == 'half': tensor = tensor.half()
-            return tensor.to(device)
+            return tensor.to(self.device)
 
         return [_prepare(a) for a in args]
 

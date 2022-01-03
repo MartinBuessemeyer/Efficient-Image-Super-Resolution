@@ -8,6 +8,7 @@ RUN apt-get -y install \
     build-essential \
     cmake \
     git \
+    graphviz \
     python3-dev \
     python3-setuptools \
     python3-pip \
@@ -16,7 +17,7 @@ RUN apt-get -y install \
     zsh
 
 # install own dependencies
-RUN pip install torchvision pillow opencv-python-headless numpy scikit-image imageio matplotlib tqdm
+RUN pip install torchvision pillow opencv-python-headless numpy scikit-image imageio matplotlib tqdm torchviz
 
 # Install tensorboardX and pandas
 RUN pip install tensorboardX pandas wandb
