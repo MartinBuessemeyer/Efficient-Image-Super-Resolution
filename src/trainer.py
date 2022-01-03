@@ -7,6 +7,7 @@ import torch.nn.utils.prune as prune
 import wandb
 from skimage.metrics import structural_similarity, peak_signal_noise_ratio
 from tqdm import tqdm
+from torchviz import make_dot
 
 import utility
 
@@ -51,6 +52,9 @@ class Trainer:
         self.epochs_since_pruning = 0
         self.epochs_before_pruning = args.epochs_before_pruning
         init_wandb_logging(args)
+        self.pruning_counter = 0
+        self.device = torch.device('cpu' if self.args.cpu else 'cuda')
+
 
         if self.args.load != '':
             self.optimizer.load(ckp.dir, epoch=len(ckp.log))
@@ -62,6 +66,11 @@ class Trainer:
         if self.epochs_since_pruning >= self.epochs_before_pruning:
             self.epochs_since_pruning = 0
             self.model.model.prune()
+            self.pruning_counter += 1
+            x = torch.ones_like(torch.empty(1, 3, 480, 360), device=self.device)
+            y = self.model.model(x)
+            make_dot(y.mean(), params=dict(self.model.model.named_parameters())).render("model_plot_"+pruning_counter, format="png")
+
     
         self.loss.step()
         epoch = self.optimizer.get_last_epoch() + 1
@@ -219,11 +228,10 @@ class Trainer:
         self.test_or_validate(self.loader_test, 'test')
 
     def prepare(self, *args):
-        device = torch.device('cpu' if self.args.cpu else 'cuda')
 
         def _prepare(tensor):
             if self.args.precision == 'half': tensor = tensor.half()
-            return tensor.to(device)
+            return tensor.to(self.device)
 
         return [_prepare(a) for a in args]
 
