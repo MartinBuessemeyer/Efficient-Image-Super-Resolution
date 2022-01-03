@@ -66,8 +66,8 @@ class Trainer:
             self.model.model.prune()
             self.pruning_counter += 1
             x = torch.ones_like(torch.empty(1, 480, 360, 3))
-            y = model(x)
-            make_dot(y.mean(), params=dict(model.named_parameters())).render("model_plot_"+pruning_counter, format="png")
+            y = self.model.model(x)
+            make_dot(y.mean(), params=dict(self.model.model.named_parameters())).render("model_plot_"+pruning_counter, format="png")
 
     
         self.loss.step()
