@@ -1,3 +1,5 @@
+# Residual Feature Distillation Network for Lightweight Image Super-Resolution
+# https://arxiv.org/abs/2009.11551
 import torch
 import torch.nn as nn
 import torch.nn.utils.prune as prune

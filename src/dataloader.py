@@ -4,9 +4,8 @@ import threading
 import torch
 import torch.multiprocessing as multiprocessing
 from torch._six import queue
-from torch.utils.data import (BatchSampler, DataLoader, RandomSampler,
-                              SequentialSampler, _utils)
-from torch.utils.data._utils import (IS_WINDOWS, MP_STATUS_CHECK_INTERVAL,
+from torch.utils.data import (DataLoader, _utils)
+from torch.utils.data._utils import (MP_STATUS_CHECK_INTERVAL,
                                      ExceptionWrapper, collate,
                                      signal_handling)
 from torch.utils.data._utils.worker import ManagerWatchdog
