@@ -5,7 +5,7 @@ import torch
 import data
 import loss
 import model
-import utility
+import src.model.utility
 from option import args
 from trainer import Trainer
 

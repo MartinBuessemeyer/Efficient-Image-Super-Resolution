@@ -9,7 +9,7 @@ from skimage.metrics import peak_signal_noise_ratio, structural_similarity
 from torchviz import make_dot
 from tqdm import tqdm
 
-import src.utils.utility as utility
+import src.model.utility as utility
 
 
 def init_wandb_logging(args):
