@@ -66,10 +66,11 @@ class Trainer:
         if self.epochs_since_pruning >= self.epochs_before_pruning:
             self.epochs_since_pruning = 0
             self.model.model.prune()
+            self.model.model.to(self.device)
             self.pruning_counter += 1
             x = torch.ones_like(torch.empty(1, 3, 480, 360), device=self.device)
             y = self.model.model(x)
-            make_dot(y.mean(), params=dict(self.model.model.named_parameters())).render("model_plot_"+str(pruning_counter), format="png")
+            make_dot(y.mean(), params=dict(self.model.model.named_parameters())).render("model_plot_"+str(self.pruning_counter), format="png")
 
     
         self.loss.step()
@@ -115,8 +116,8 @@ class Trainer:
             timer_data.tic()
 
             sum_loss += loss
-
-        wandb.log({'train': {'loss': sum_loss / len(self.loader_train),
+        if not self.args.wandb_disable:
+            wandb.log({'train': {'loss': sum_loss / len(self.loader_train),
                              'lr': self.optimizer.get_lr()}})
 
         self.loss.end_log(len(self.loader_train))
