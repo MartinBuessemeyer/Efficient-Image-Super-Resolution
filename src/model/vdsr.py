@@ -1,7 +1,7 @@
-from model import common
-
 import torch.nn as nn
 import torch.nn.init as init
+
+from model import common
 
 url = {
     'r20f64': ''

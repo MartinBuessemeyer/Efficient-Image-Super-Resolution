@@ -5,9 +5,9 @@ import torch
 import torch.nn.utils as utils
 import torch.nn.utils.prune as prune
 import wandb
-from skimage.metrics import structural_similarity, peak_signal_noise_ratio
-from tqdm import tqdm
+from skimage.metrics import peak_signal_noise_ratio, structural_similarity
 from torchviz import make_dot
+from tqdm import tqdm
 
 import utility
 

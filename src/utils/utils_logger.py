@@ -1,8 +1,7 @@
-import os
-import sys
 import datetime
 import logging
-
+import os
+import sys
 
 '''
 modified by Kai Zhang (github: https://github.com/cszn)

@@ -1,13 +1,12 @@
 import os
 
-from data import common
-
 import cv2
-import numpy as np
 import imageio
-
+import numpy as np
 import torch
 import torch.utils.data as data
+
+from data import common
 
 
 class Video(data.Dataset):

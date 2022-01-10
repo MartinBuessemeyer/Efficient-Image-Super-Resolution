@@ -1,6 +1,6 @@
 import os
-from data import srdata
-from data import div2k
+
+from data import div2k, srdata
 
 
 class DIV2KJPEG(div2k.DIV2K):

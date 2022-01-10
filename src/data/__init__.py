@@ -1,8 +1,7 @@
 from importlib import import_module
 
-from torch.utils.data import ConcatDataset
 # from dataloader import MSDataLoader
-from torch.utils.data import dataloader
+from torch.utils.data import ConcatDataset, dataloader
 
 
 # This is a simple wrapper function for ConcatDataset

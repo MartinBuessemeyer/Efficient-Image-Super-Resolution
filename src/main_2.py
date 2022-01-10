@@ -1,4 +1,5 @@
 import os
+
 if os.environ.get('REMOTE_PYCHARM_DEBUG_SESSION', False):
     import pydevd_pycharm
     pydevd_pycharm.settrace(
@@ -18,17 +19,17 @@ import time
 import warnings
 
 import torch
-import torch.nn as nn
-import torch.nn.parallel
 import torch.backends.cudnn as cudnn
 import torch.distributed as dist
-import torch.optim
 import torch.multiprocessing as mp
+import torch.nn as nn
+import torch.nn.parallel
+import torch.optim
 import torch.utils.data
 import torch.utils.data.distributed
-import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as models
+import torchvision.transforms as transforms
 
 model_names = sorted(name for name in models.__dict__
                      if name.islower() and not name.startswith("__")

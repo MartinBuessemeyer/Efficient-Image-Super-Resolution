@@ -2,7 +2,6 @@ import random
 
 import numpy as np
 import skimage.color as sc
-
 import torch
 
 

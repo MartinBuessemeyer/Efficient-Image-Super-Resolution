@@ -1,8 +1,8 @@
 # ECCV-2018-Image Super-Resolution Using Very Deep Residual Channel Attention Networks
 # https://arxiv.org/abs/1807.02758
-from model import common
-
 import torch.nn as nn
+
+from model import common
 
 
 def make_model(args, parent=False):

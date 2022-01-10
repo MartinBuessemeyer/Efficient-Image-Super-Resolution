@@ -1,6 +1,6 @@
-from model import common
-
 import torch.nn as nn
+
+from model import common
 
 url = {
     'r16f64x2': 'https://cv.snu.ac.kr/research/EDSR/models/edsr_baseline_x2-1bc95232.pt',

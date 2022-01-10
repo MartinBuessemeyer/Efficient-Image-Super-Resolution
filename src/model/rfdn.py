@@ -1,7 +1,8 @@
-import model.block as B
 import torch
 import torch.nn as nn
 import torch.nn.utils.prune as prune
+
+import model.block as B
 
 
 def make_model(args, parent=False):

@@ -1,8 +1,9 @@
 import torch
 import torch.nn as nn
+import torch.nn.utils.prune as prune
+
 import model.block_advanced as B
 from model import common
-import torch.nn.utils.prune as prune
 
 
 def make_model(args, parent=False):

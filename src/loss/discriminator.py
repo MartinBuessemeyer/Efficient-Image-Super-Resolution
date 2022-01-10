@@ -1,6 +1,6 @@
-from model import common
-
 import torch.nn as nn
+
+from model import common
 
 
 class Discriminator(nn.Module):

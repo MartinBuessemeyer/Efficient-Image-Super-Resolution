@@ -1,13 +1,11 @@
+import glob
 import os
 
-from data import common
-from data import srdata
-import glob
-
 import numpy as np
-
 import torch
 import torch.utils.data as data
+
+from data import common, srdata
 
 
 class EvaluationDataset(srdata.SRData):

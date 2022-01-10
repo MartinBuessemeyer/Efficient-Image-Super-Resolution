@@ -2,8 +2,7 @@ import datetime
 import math
 import os
 import time
-from multiprocessing import Process
-from multiprocessing import Queue
+from multiprocessing import Process, Queue
 
 import imageio
 import numpy as np

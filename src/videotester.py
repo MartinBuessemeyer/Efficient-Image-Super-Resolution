@@ -1,13 +1,12 @@
-import os
 import math
+import os
+
+import cv2
+import torch
+from tqdm import tqdm
 
 import utility
 from data import common
-
-import torch
-import cv2
-
-from tqdm import tqdm
 
 
 class VideoTester():

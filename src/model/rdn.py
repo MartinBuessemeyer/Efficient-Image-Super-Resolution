@@ -1,10 +1,10 @@
 # Residual Dense Network for Image Super-Resolution
 # https://arxiv.org/abs/1802.08797
 
-from model import common
-
 import torch
 import torch.nn as nn
+
+from model import common
 
 
 def make_model(args, parent=False):

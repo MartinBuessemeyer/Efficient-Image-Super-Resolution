@@ -1,13 +1,14 @@
+import os
+
 import torch
 
-import utility
 import data
-import model
 import loss
+import model
+import utility
 from option import args
 from trainer import Trainer
 
-import os
 if os.environ.get('REMOTE_PYCHARM_DEBUG_SESSION', False):
     import pydevd_pycharm
     pydevd_pycharm.settrace(

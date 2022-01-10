@@ -1,14 +1,14 @@
-import os
 import glob
-import random
+import os
 import pickle
+import random
 
-from data import common
-
-import numpy as np
 import imageio
+import numpy as np
 import torch
 import torch.utils.data as data
+
+from data import common
 
 
 class SRData(data.Dataset):

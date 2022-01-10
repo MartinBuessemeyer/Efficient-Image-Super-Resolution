@@ -1,12 +1,13 @@
-import os.path
 import logging
+import os.path
 import time
 from collections import OrderedDict
+
 import torch
 
-from utils import utils_logger
-from utils import utils_image as util
 from model.RFDN import RFDN
+from utils import utils_image as util
+from utils import utils_logger
 
 
 def main():
