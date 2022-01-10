@@ -89,7 +89,6 @@ class Trainer:
         self.loader_train.dataset.set_scale(0)
         sum_loss = 0
         for batch, (lr, hr, _,) in enumerate(self.loader_train):
-            print(batch)
             lr, hr = self.prepare(lr, hr)
             timer_data.hold()
             timer_model.tic()

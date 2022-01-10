@@ -2,14 +2,14 @@ import model.block_advanced as B
 import torch
 import torch.nn as nn
 import torch.nn.utils.prune as prune
-from model.block_advanced import conv_layer, SRB
 from model import common
-
+from model.block_advanced import conv_layer, SRB
 
 
 def make_model(args, parent=False):
     model = RFDNAdvanced(args)
     return model
+
 
 def _merge_identity_mask(current_mask, new_mask, device):
     combined_mask = []
@@ -19,8 +19,9 @@ def _merge_identity_mask(current_mask, new_mask, device):
             new_mask_idx_offset += 1
             combined_mask.append(False)
         else:
-            combined_mask.append(new_mask[idx + new_mask_idx_offset])
+            combined_mask.append(new_mask[idx - new_mask_idx_offset])
     return torch.tensor(combined_mask, device=device)
+
 
 def _get_new_parameter(new_weight_or_bias, device):
     return torch.nn.Parameter(new_weight_or_bias.to(device=device))
@@ -134,4 +135,3 @@ class RFDNAdvanced(nn.Module):
                     block.srbs[srb_idx + 1] = _get_pruned_subsequent_srb_block(block.srbs[srb_idx + 1],
                                                                                mask, num_filters_remaining, self.device)
         return mask.shape[0], num_filters_remaining
-
