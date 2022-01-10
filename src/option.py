@@ -99,8 +99,6 @@ parser.add_argument('--self_ensemble', action='store_true',
                     help='use self-ensemble method for test')
 parser.add_argument('--test_only', action='store_true',
                     help='set this option to test the model')
-parser.add_argument('--gan_k', type=int, default=1,
-                    help='k value for adversarial loss')
 parser.add_argument('--batch_size_test', type=int, default=1,
                     help='input batch size for testing')
 parser.add_argument('--epochs_before_pruning', type=int, default=180,
