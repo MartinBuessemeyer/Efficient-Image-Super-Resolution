@@ -310,7 +310,7 @@ class RFDB(nn.Module):
         return out_fused
 
     def switch_to_deploy(self):
-        for srb in [self.srb1, self.srb2, self.srb3]:
+        for srb in self.srbs:
             srb.switch_to_deploy()
 
 
