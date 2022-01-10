@@ -1,13 +1,9 @@
 import argparse
 
-import template
-
 parser = argparse.ArgumentParser(description='EDSR and MDSR')
 
 parser.add_argument('--debug', action='store_true',
                     help='Enables debug mode')
-parser.add_argument('--template', default='.',
-                    help='You can set various templates in option.py')
 
 # Hardware specifications
 parser.add_argument('--n_threads', type=int, default=6,
@@ -165,7 +161,6 @@ parser.add_argument('--wandb-disable', action='store_true',
                     help='Disables wandb logging.')
 
 args = parser.parse_args()
-template.set_template(args)
 
 args.scale = list(map(lambda x: int(x), args.scale.split('+')))
 args.data_train = args.data_train.split('+')
