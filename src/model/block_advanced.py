@@ -261,7 +261,7 @@ class SRB(nn.Module):
 
 
 class RFDB(nn.Module):
-    def __init__(self, in_channels, distillation_rate=0.25):
+    def __init__(self, in_channels):
         super(RFDB, self).__init__()
         self.distilled_channels = in_channels // 2
         self.remaining_channels = in_channels
