@@ -1,4 +1,3 @@
-
 # Make data directory
 RUN mkdir -p /data
 
@@ -12,22 +11,27 @@ RUN apt-get -y install \
     python3-dev \
     python3-setuptools \
     python3-pip \
-    nano \
     vim \
     zsh
 
-# install own dependencies
-RUN pip install torchvision pillow opencv-python-headless numpy scikit-image imageio matplotlib tqdm torchviz
-
-# Install tensorboardX and pandas
-RUN pip install tensorboardX pandas wandb
+# Install own dependencies
+RUN pip install imageio \
+    matplotlib \
+    numpy \
+    opencv-python-headless \
+    pillow \
+    scikit-image \
+    torchvision \
+    torchviz \
+    tqdm \
+    wandb
 
 # Install development tool for PyCharm for remote debugging
 RUN pip install pydevd-pycharm~=211.7628.24
 
-# save some space
+# Save some space
 RUN rm -rf /root/.cache/pip
 
-# install oh-my-zsh
+# Install oh-my-zsh
 RUN git clone "https://github.com/robbyrussell/oh-my-zsh.git" "${HOME}/.oh-my-zsh"
 RUN cp "${HOME}/.oh-my-zsh/templates/zshrc.zsh-template" "${HOME}/.zshrc"
