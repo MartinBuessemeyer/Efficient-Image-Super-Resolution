@@ -2,8 +2,9 @@ import model.block_advanced as B
 import torch
 import torch.nn as nn
 import torch.nn.utils.prune as prune
-from model import common
 from model.block_advanced import conv_layer, SRB
+from model import common
+
 
 
 def make_model(args, parent=False):
@@ -116,10 +117,8 @@ class RFDNAdvanced(nn.Module):
         self.scale_idx = scale_idx
 
     def switch_to_deploy(self):
-        self.B1.switch_to_deploy()
-        self.B2.switch_to_deploy()
-        self.B3.switch_to_deploy()
-        self.B4.switch_to_deploy()
+        for block in [self.B1, self.B2, self.B3, self.B4]:
+            block.switch_to_deploy()
 
     def prune(self):
         for block in [self.B1, self.B2, self.B3, self.B4]:
@@ -134,3 +133,4 @@ class RFDNAdvanced(nn.Module):
                 if srb_idx < len(block.srbs) - 1:
                     block.srbs[srb_idx + 1] = _get_pruned_subsequent_srb_block(block.srbs[srb_idx + 1],
                                                                                mask, num_filters_remaining, self.device)
+

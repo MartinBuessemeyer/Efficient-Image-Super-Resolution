@@ -5,10 +5,23 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-def conv_layer(in_channels, out_channels, kernel_size, stride=1, dilation=1, groups=1):
+def conv_layer(
+        in_channels,
+        out_channels,
+        kernel_size,
+        stride=1,
+        dilation=1,
+        groups=1):
     padding = int((kernel_size - 1) / 2) * dilation
-    return nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding=padding, bias=True, dilation=dilation,
-                     groups=groups)
+    return nn.Conv2d(
+        in_channels,
+        out_channels,
+        kernel_size,
+        stride,
+        padding=padding,
+        bias=True,
+        dilation=dilation,
+        groups=groups)
 
 
 def norm(norm_type, nc):
@@ -18,7 +31,8 @@ def norm(norm_type, nc):
     elif norm_type == 'instance':
         layer = nn.InstanceNorm2d(nc, affine=False)
     else:
-        raise NotImplementedError('normalization layer [{:s}] is not found'.format(norm_type))
+        raise NotImplementedError(
+            'normalization layer [{:s}] is not found'.format(norm_type))
     return layer
 
 
@@ -31,7 +45,8 @@ def pad(pad_type, padding):
     elif pad_type == 'replicate':
         layer = nn.ReplicationPad2d(padding)
     else:
-        raise NotImplementedError('padding layer [{:s}] is not implemented'.format(pad_type))
+        raise NotImplementedError(
+            'padding layer [{:s}] is not implemented'.format(pad_type))
     return layer
 
 
@@ -41,14 +56,30 @@ def get_valid_padding(kernel_size, dilation):
     return padding
 
 
-def conv_block(in_nc, out_nc, kernel_size, stride=1, dilation=1, groups=1, bias=True,
-               pad_type='zero', norm_type=None, act_type='relu'):
+def conv_block(
+        in_nc,
+        out_nc,
+        kernel_size,
+        stride=1,
+        dilation=1,
+        groups=1,
+        bias=True,
+        pad_type='zero',
+        norm_type=None,
+        act_type='relu'):
     padding = get_valid_padding(kernel_size, dilation)
     p = pad(pad_type, padding) if pad_type and pad_type != 'zero' else None
     padding = padding if pad_type == 'zero' else 0
 
-    c = nn.Conv2d(in_nc, out_nc, kernel_size=kernel_size, stride=stride, padding=padding,
-                  dilation=dilation, bias=bias, groups=groups)
+    c = nn.Conv2d(
+        in_nc,
+        out_nc,
+        kernel_size=kernel_size,
+        stride=stride,
+        padding=padding,
+        dilation=dilation,
+        bias=bias,
+        groups=groups)
     a = activation(act_type) if act_type else None
     n = norm(norm_type, out_nc) if norm_type else None
     return sequential(p, c, n, a)
@@ -63,7 +94,8 @@ def activation(act_type, inplace=True, neg_slope=0.05, n_prelu=1):
     elif act_type == 'prelu':
         layer = nn.PReLU(num_parameters=n_prelu, init=neg_slope)
     else:
-        raise NotImplementedError('activation layer [{:s}] is not found'.format(act_type))
+        raise NotImplementedError(
+            'activation layer [{:s}] is not found'.format(act_type))
     return layer
 
 
@@ -86,14 +118,16 @@ def mean_channels(F):
 def stdv_channels(F):
     assert (F.dim() == 4)
     F_mean = mean_channels(F)
-    F_variance = (F - F_mean).pow(2).sum(3, keepdim=True).sum(2, keepdim=True) / (F.size(2) * F.size(3))
+    F_variance = (F - F_mean).pow(2).sum(3, keepdim=True).sum(2,
+                                                              keepdim=True) / (F.size(2) * F.size(3))
     return F_variance.pow(0.5)
 
 
 def sequential(*args):
     if len(args) == 1:
         if isinstance(args[0], OrderedDict):
-            raise NotImplementedError('sequential does not support OrderedDict input.')
+            raise NotImplementedError(
+                'sequential does not support OrderedDict input.')
         return args[0]
     modules = []
     for module in args:
@@ -126,7 +160,8 @@ class ESA(nn.Module):
         v_range = self.relu(self.conv_max(v_max))
         c3 = self.relu(self.conv3(v_range))
         c3 = self.conv3_(c3)
-        c3 = F.interpolate(c3, (x.size(2), x.size(3)), mode='bilinear', align_corners=False)
+        c3 = F.interpolate(c3, (x.size(2), x.size(3)),
+                           mode='bilinear', align_corners=False)
         cf = self.conv_f(c1_)
         c4 = self.conv4(c3 + cf)
         m = self.sigmoid(c4)
@@ -165,13 +200,23 @@ class RFDB(nn.Module):
 
         r_c4 = self.act(self.c4(r_c3))
 
-        out = torch.cat([distilled_c1, distilled_c2, distilled_c3, r_c4], dim=1)
+        out = torch.cat([distilled_c1, distilled_c2,
+                         distilled_c3, r_c4], dim=1)
         out_fused = self.esa(self.c5(out))
 
         return out_fused
+    
+    def switch_to_deploy(self):
+        pass
 
 
-def pixelshuffle_block(in_channels, out_channels, upscale_factor=2, kernel_size=3, stride=1):
-    conv = conv_layer(in_channels, out_channels * (upscale_factor ** 2), kernel_size, stride)
+def pixelshuffle_block(
+        in_channels,
+        out_channels,
+        upscale_factor=2,
+        kernel_size=3,
+        stride=1):
+    conv = conv_layer(in_channels, out_channels *
+                      (upscale_factor ** 2), kernel_size, stride)
     pixel_shuffle = nn.PixelShuffle(upscale_factor)
     return sequential(conv, pixel_shuffle)
