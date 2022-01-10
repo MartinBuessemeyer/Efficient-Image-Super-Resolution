@@ -47,6 +47,8 @@ def add_test_wandb_logs(
 class Trainer:
     def __init__(self, args, loader, my_model, my_loss, ckp):
         self.args = args
+        init_wandb_logging(args)
+
         self.scale = args.scale
 
         self.ckp = ckp
@@ -58,7 +60,6 @@ class Trainer:
         self.optimizer = utility.make_optimizer(args, self.model)
         self.epochs_since_pruning = 0
         self.epochs_before_pruning = args.epochs_before_pruning
-        init_wandb_logging(args)
         self.pruning_counter = 0
         self.device = torch.device('cpu' if self.args.cpu else 'cuda')
 
@@ -74,11 +75,7 @@ class Trainer:
             self.model.model.prune()
             self.pruning_counter += 1
             x = torch.ones_like(
-                torch.empty(
-                    1,
-                    3,
-                    480,
-                    360),
+                torch.empty(1, 3, 480, 360),
                 device=self.device)
             y = self.model.model(x)
             make_dot(
