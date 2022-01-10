@@ -9,6 +9,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
+
 class Adversarial(nn.Module):
     def __init__(self, args, gan_type):
         super(Adversarial, self).__init__()
@@ -59,7 +60,8 @@ class Adversarial(nn.Module):
                     gradient_norm = gradients.norm(2, dim=1)
                     gradient_penalty = 10 * gradient_norm.sub(1).pow(2).mean()
                     loss_d += gradient_penalty
-            # from ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks
+            # from ESRGAN: Enhanced Super-Resolution Generative Adversarial
+            # Networks
             elif self.gan_type == 'RGAN':
                 better_real = d_real - d_fake.mean(dim=0, keepdim=True)
                 better_fake = d_fake - d_real.mean(dim=0, keepdim=True)
@@ -78,7 +80,8 @@ class Adversarial(nn.Module):
         self.loss /= self.gan_k
 
         # updating generator...
-        d_fake_bp = self.dis(fake)      # for backpropagation, use fake as it is
+        # for backpropagation, use fake as it is
+        d_fake_bp = self.dis(fake)
         if self.gan_type == 'GAN':
             label_real = torch.ones_like(d_fake_bp)
             loss_g = F.binary_cross_entropy_with_logits(d_fake_bp, label_real)
@@ -91,7 +94,7 @@ class Adversarial(nn.Module):
 
         # Generator loss
         return loss_g
-    
+
     def state_dict(self, *args, **kwargs):
         state_discriminator = self.dis.state_dict(*args, **kwargs)
         state_optimizer = self.optimizer.state_dict()
@@ -105,7 +108,7 @@ class Adversarial(nn.Module):
         bce_fake = F.binary_cross_entropy_with_logits(fake, label_fake)
         bce_loss = bce_real + bce_fake
         return bce_loss
-               
+
 # Some references
 # https://github.com/kuc2477/pytorch-wgan-gp/blob/master/model.py
 # OR

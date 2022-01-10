@@ -2,6 +2,7 @@ import os
 from data import srdata
 from data import div2k
 
+
 class DIV2KJPEG(div2k.DIV2K):
     def __init__(self, args, name='', train=True, benchmark=False):
         self.q_factor = int(name.replace('DIV2K-Q', ''))
@@ -15,6 +16,6 @@ class DIV2KJPEG(div2k.DIV2K):
         self.dir_lr = os.path.join(
             self.apath, 'DIV2K_Q{}'.format(self.q_factor)
         )
-        if self.input_large: self.dir_lr += 'L'
+        if self.input_large:
+            self.dir_lr += 'L'
         self.ext = ('.png', '.jpg')
-

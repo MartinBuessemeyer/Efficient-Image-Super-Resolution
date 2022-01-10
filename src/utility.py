@@ -22,7 +22,8 @@ class timer():
 
     def toc(self, restart=False):
         diff = time.time() - self.t0
-        if restart: self.t0 = time.time()
+        if restart:
+            self.t0 = time.time()
         return diff
 
     def hold(self):
@@ -106,20 +107,25 @@ class checkpoint:
             while True:
                 if not queue.empty():
                     filename, tensor = queue.get()
-                    if filename is None: break
+                    if filename is None:
+                        break
                     imageio.imwrite(filename, tensor.numpy())
 
         self.process = [
-            Process(target=bg_target, args=(self.queue,)) \
+            Process(target=bg_target, args=(self.queue,))
             for _ in range(self.n_processes)
         ]
 
-        for p in self.process: p.start()
+        for p in self.process:
+            p.start()
 
     def end_background(self):
-        for _ in range(self.n_processes): self.queue.put((None, None))
-        while not self.queue.empty(): time.sleep(1)
-        for p in self.process: p.join()
+        for _ in range(self.n_processes):
+            self.queue.put((None, None))
+        while not self.queue.empty():
+            time.sleep(1)
+        for p in self.process:
+            p.join()
 
     def save_results(self, dataset, filename, save_list, scale):
         if self.args.save_results:
@@ -141,7 +147,8 @@ def quantize(img, rgb_range):
 
 
 def calc_psnr(sr, hr, scale, rgb_range, dataset=None):
-    if hr.nelement() == 1: return 0
+    if hr.nelement() == 1:
+        return 0
 
     diff = (sr - hr) / rgb_range
     if dataset and dataset.dataset.benchmark:
@@ -196,7 +203,8 @@ def make_optimizer(args, target):
         def load(self, load_dir, epoch=1):
             self.load_state_dict(torch.load(self.get_dir(load_dir)))
             if epoch > 1:
-                for _ in range(epoch): self.scheduler.step()
+                for _ in range(epoch):
+                    self.scheduler.step()
 
         def get_dir(self, dir_path):
             return os.path.join(dir_path, 'optimizer.pt')

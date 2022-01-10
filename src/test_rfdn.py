@@ -45,7 +45,7 @@ def main():
     # read image
     # --------------------------------
     L_folder = os.path.join(testsets, testset_L, 'X4')
-    E_folder = os.path.join(testsets, testset_L+'_results')
+    E_folder = os.path.join(testsets, testset_L + '_results')
     util.mkdir(E_folder)
 
     # record PSNR, runtime
@@ -67,7 +67,7 @@ def main():
         # --------------------------------
         idx += 1
         img_name, ext = os.path.splitext(os.path.basename(img))
-        logger.info('{:->4d}--> {:>10s}'.format(idx, img_name+ext))
+        logger.info('{:->4d}--> {:>10s}'.format(idx, img_name + ext))
 
         img_L = util.imread_uint(img, n_channels=3)
         img_L = util.uint2tensor4(img_L)
@@ -88,10 +88,12 @@ def main():
         # --------------------------------
         # (3) save results
         # --------------------------------
-        util.imsave(img_E, os.path.join(E_folder, img_name+ext))
+        util.imsave(img_E, os.path.join(E_folder, img_name + ext))
 
-    ave_runtime = sum(test_results['runtime']) / len(test_results['runtime']) / 1000.0
-    logger.info('------> Average runtime of ({}) is : {:.6f} seconds'.format(L_folder, ave_runtime))
+    ave_runtime = sum(test_results['runtime']) / \
+        len(test_results['runtime']) / 1000.0
+    logger.info(
+        '------> Average runtime of ({}) is : {:.6f} seconds'.format(L_folder, ave_runtime))
 
     # --------------------------------
     # (4) calculate psnr
@@ -106,6 +108,7 @@ def main():
         idx += 1
     logger.info('------> Average psnr of ({}) is : {:.6f} dB'.format(L_folder, sum(psnr)/len(psnr)))
     '''
+
 
 if __name__ == '__main__':
 

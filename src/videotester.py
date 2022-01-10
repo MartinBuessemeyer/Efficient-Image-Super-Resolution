@@ -9,6 +9,7 @@ import cv2
 
 from tqdm import tqdm
 
+
 class VideoTester():
     def __init__(self, args, my_model, ckp):
         self.args = args
@@ -42,7 +43,8 @@ class VideoTester():
             tqdm_test = tqdm(range(total_frames), ncols=80)
             for _ in tqdm_test:
                 success, lr = vidcap.read()
-                if not success: break
+                if not success:
+                    break
 
                 lr, = common.set_channel(lr, n_channels=self.args.n_colors)
                 lr, = common.np2Tensor(lr, rgb_range=self.args.rgb_range)
@@ -64,9 +66,10 @@ class VideoTester():
 
     def prepare(self, *args):
         device = torch.device('cpu' if self.args.cpu else 'cuda')
+
         def _prepare(tensor):
-            if self.args.precision == 'half': tensor = tensor.half()
+            if self.args.precision == 'half':
+                tensor = tensor.half()
             return tensor.to(device)
 
         return [_prepare(a) for a in args]
-

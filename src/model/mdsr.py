@@ -4,11 +4,12 @@ import torch.nn as nn
 
 url = {
     'r16f64': 'https://cv.snu.ac.kr/research/EDSR/models/mdsr_baseline-a00cab12.pt',
-    'r80f64': 'https://cv.snu.ac.kr/research/EDSR/models/mdsr-4a78bedf.pt'
-}
+    'r80f64': 'https://cv.snu.ac.kr/research/EDSR/models/mdsr-4a78bedf.pt'}
+
 
 def make_model(args, parent=False):
     return MDSR(args)
+
 
 class MDSR(nn.Module):
     def __init__(self, args, conv=common.default_conv):
@@ -64,4 +65,3 @@ class MDSR(nn.Module):
 
     def set_scale(self, scale_idx):
         self.scale_idx = scale_idx
-

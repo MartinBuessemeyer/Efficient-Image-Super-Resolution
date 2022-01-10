@@ -2,10 +2,12 @@ from model import common
 
 import torch.nn as nn
 
+
 class Discriminator(nn.Module):
     '''
         output is not normalized
     '''
+
     def __init__(self, args):
         super(Discriminator, self).__init__()
 
@@ -52,4 +54,3 @@ class Discriminator(nn.Module):
         output = self.classifier(features.view(features.size(0), -1))
 
         return output
-

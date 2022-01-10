@@ -18,11 +18,18 @@ def init_wandb_logging(args):
         wandb.config.update(args)
 
 
-def add_test_wandb_logs(args, dataset_to_scale_to_sum_losses, dataset_to_scale_to_sum_psnr,
-                        dataset_to_scale_to_sum_ssim, mean_time_forward_pass, step_name, epoch):
+def add_test_wandb_logs(
+        args,
+        dataset_to_scale_to_sum_losses,
+        dataset_to_scale_to_sum_psnr,
+        dataset_to_scale_to_sum_ssim,
+        mean_time_forward_pass,
+        step_name,
+        epoch):
     if args.wandb_disable:
         return
-    test_logs = {dataset: {} for dataset in dataset_to_scale_to_sum_psnr.keys()}
+    test_logs = {dataset: {}
+                 for dataset in dataset_to_scale_to_sum_psnr.keys()}
 
     def add_to_testlog(metric, metric_dict):
         for dataset, values_by_scale in metric_dict.items():
@@ -55,7 +62,6 @@ class Trainer:
         self.pruning_counter = 0
         self.device = torch.device('cpu' if self.args.cpu else 'cuda')
 
-
         if self.args.load != '':
             self.optimizer.load(ckp.dir, epoch=len(ckp.log))
 
@@ -67,11 +73,22 @@ class Trainer:
             self.epochs_since_pruning = 0
             self.model.model.prune()
             self.pruning_counter += 1
-            x = torch.ones_like(torch.empty(1, 3, 480, 360), device=self.device)
+            x = torch.ones_like(
+                torch.empty(
+                    1,
+                    3,
+                    480,
+                    360),
+                device=self.device)
             y = self.model.model(x)
-            make_dot(y.mean(), params=dict(self.model.model.named_parameters())).render("model_plot_"+str(pruning_counter), format="png")
+            make_dot(
+                y.mean(),
+                params=dict(
+                    self.model.model.named_parameters())).render(
+                "model_plot_" +
+                str(pruning_counter),
+                format="png")
 
-    
         self.loss.step()
         epoch = self.optimizer.get_last_epoch() + 1
         lr = self.optimizer.get_lr()
@@ -138,10 +155,12 @@ class Trainer:
         if self.args.save_results:
             self.ckp.begin_background()
 
-        dataset_to_scale_to_sum_losses = {dataset.dataset.name: {scale: 0 for scale in self.scale} for dataset in
-                                          loader}
-        dataset_to_scale_to_sum_psnr = {dataset.dataset.name: {scale: 0 for scale in self.scale} for dataset in loader}
-        dataset_to_scale_to_sum_ssim = {dataset.dataset.name: {scale: 0 for scale in self.scale} for dataset in loader}
+        dataset_to_scale_to_sum_losses = {dataset.dataset.name: {
+            scale: 0 for scale in self.scale} for dataset in loader}
+        dataset_to_scale_to_sum_psnr = {dataset.dataset.name: {
+            scale: 0 for scale in self.scale} for dataset in loader}
+        dataset_to_scale_to_sum_ssim = {dataset.dataset.name: {
+            scale: 0 for scale in self.scale} for dataset in loader}
 
         for idx_data, d in enumerate(loader):
             for idx_scale, scale in enumerate(self.scale):
@@ -164,8 +183,12 @@ class Trainer:
                     for batch_idx in range(batch_size):
                         sr_numpy = sr[batch_idx, ...].detach().cpu().numpy()
                         hr_numpy = hr[batch_idx, ...].detach().cpu().numpy()
-                        ssim += structural_similarity(sr_numpy, hr_numpy, channel_axis=0, data_range=self.args.rgb_range)
-                        psnr += peak_signal_noise_ratio(sr_numpy, hr_numpy, data_range=self.args.rgb_range)
+                        ssim += structural_similarity(sr_numpy,
+                                                      hr_numpy,
+                                                      channel_axis=0,
+                                                      data_range=self.args.rgb_range)
+                        psnr += peak_signal_noise_ratio(
+                            sr_numpy, hr_numpy, data_range=self.args.rgb_range)
                     ssim /= batch_size
                     psnr /= batch_size
 
@@ -203,7 +226,8 @@ class Trainer:
                     )
                 )
         mean_time_forward_pass = np.mean(durations)
-        self.ckp.write_log('Mean time forward pass: {:.5f}s\n'.format(mean_time_forward_pass))
+        self.ckp.write_log(
+            'Mean time forward pass: {:.5f}s\n'.format(mean_time_forward_pass))
         self.ckp.write_log('Saving...')
 
         if self.args.save_results:
@@ -216,8 +240,14 @@ class Trainer:
             'Total: {:.2f}s\n'.format(timer_test.toc()), refresh=True
         )
 
-        add_test_wandb_logs(self.args, dataset_to_scale_to_sum_losses, dataset_to_scale_to_sum_psnr,
-                            dataset_to_scale_to_sum_ssim, mean_time_forward_pass, step_name, epoch)
+        add_test_wandb_logs(
+            self.args,
+            dataset_to_scale_to_sum_losses,
+            dataset_to_scale_to_sum_psnr,
+            dataset_to_scale_to_sum_ssim,
+            mean_time_forward_pass,
+            step_name,
+            epoch)
 
         torch.set_grad_enabled(True)
 
@@ -230,7 +260,8 @@ class Trainer:
     def prepare(self, *args):
 
         def _prepare(tensor):
-            if self.args.precision == 'half': tensor = tensor.half()
+            if self.args.precision == 'half':
+                tensor = tensor.half()
             return tensor.to(self.device)
 
         return [_prepare(a) for a in args]

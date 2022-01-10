@@ -58,8 +58,8 @@ class SRData(data.Dataset):
                     self.images_lr[i].append(b)
                     self._check_and_load(args.ext, l, b, verbose=True)
 
-
     # Below functions as used to prepare images
+
     def _scan(self):
         names_hr = sorted(
             glob.glob(os.path.join(self.dir_hr, '*' + self.ext[0]))
@@ -83,7 +83,8 @@ class SRData(data.Dataset):
         self.apath = os.path.join(dir_data, self.name)
         self.dir_hr = os.path.join(self.apath, 'HR')
         self.dir_lr = os.path.join(self.apath, 'LR_bicubic')
-        if self.input_large: self.dir_lr += 'L'
+        if self.input_large:
+            self.dir_lr += 'L'
         self.ext = ('.png', '.png')
 
     def _check_and_load(self, ext, img, f, verbose=True):
@@ -140,7 +141,8 @@ class SRData(data.Dataset):
                 multi=(len(self.scale) > 1),
                 input_large=self.input_large
             )
-            if not self.args.no_augment: lr, hr = common.augment(lr, hr)
+            if not self.args.no_augment:
+                lr, hr = common.augment(lr, hr)
         else:
             ih, iw = lr.shape[:2]
             hr = hr[0:ih * scale, 0:iw * scale]
@@ -152,4 +154,3 @@ class SRData(data.Dataset):
             self.idx_scale = idx_scale
         else:
             self.idx_scale = random.randint(0, len(self.scale) - 1)
-

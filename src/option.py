@@ -19,8 +19,11 @@ parser.add_argument('--seed', type=int, default=1,
                     help='random seed')
 
 # Data specifications
-parser.add_argument('--dir_data', type=str, default='/mnt/ssd1/midl21t1/datasets',
-                    help='dataset directory')
+parser.add_argument(
+    '--dir_data',
+    type=str,
+    default='/mnt/ssd1/midl21t1/datasets',
+    help='dataset directory')
 parser.add_argument('--dir_demo', type=str, default='../test',
                     help='demo image directory')
 parser.add_argument('--data_train', type=str, default='DIV2K',
@@ -142,12 +145,17 @@ parser.add_argument('--resume', type=int, default=0,
                     help='resume from specific checkpoint')
 parser.add_argument('--save_models', action='store_true',
                     help='save all intermediate models')
-parser.add_argument('--print_every', type=int, default=100,
-                    help='how many batches to wait before logging training status')
+parser.add_argument(
+    '--print_every',
+    type=int,
+    default=100,
+    help='how many batches to wait before logging training status')
 parser.add_argument('--save_results', action='store_true',
                     help='save output results')
-parser.add_argument('--save_gt', action='store_true',
-                    help='save low-resolution and high-resolution images together')
+parser.add_argument(
+    '--save_gt',
+    action='store_true',
+    help='save low-resolution and high-resolution images together')
 
 # WANDB options
 parser.add_argument('--wandb-project-name', type=str, default='RFDN',
@@ -171,4 +179,3 @@ for arg in vars(args):
         vars(args)[arg] = True
     elif vars(args)[arg] == 'False':
         vars(args)[arg] = False
-

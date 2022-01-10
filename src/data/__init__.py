@@ -13,7 +13,8 @@ class MyConcatDataset(ConcatDataset):
 
     def set_scale(self, idx_scale):
         for d in self.datasets:
-            if hasattr(d, 'set_scale'): d.set_scale(idx_scale)
+            if hasattr(d, 'set_scale'):
+                d.set_scale(idx_scale)
 
 
 class Data:
@@ -34,14 +35,20 @@ class Data:
                 num_workers=args.n_threads,
             )
 
-        self.loader_validate = self.get_evaluation_loader(args, args.data_validate)
+        self.loader_validate = self.get_evaluation_loader(
+            args, args.data_validate)
         self.loader_test = self.get_evaluation_loader(args, args.data_test)
 
     def get_evaluation_loader(self, args, data_modules):
         loader = []
         for module_name in data_modules:
             m = import_module('data.' + module_name.lower())
-            testset = getattr(m, module_name)(args, train=False, name=module_name)
+            testset = getattr(
+                m,
+                module_name)(
+                args,
+                train=False,
+                name=module_name)
 
             loader.append(
                 dataloader.DataLoader(

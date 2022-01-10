@@ -17,7 +17,17 @@ https://github.com/twhui/SRGAN-pyTorch
 https://github.com/xinntao/BasicSR
 '''
 
-IMG_EXTENSIONS = ['.jpg', '.JPG', '.jpeg', '.JPEG', '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP']
+IMG_EXTENSIONS = [
+    '.jpg',
+    '.JPG',
+    '.jpeg',
+    '.JPEG',
+    '.png',
+    '.PNG',
+    '.ppm',
+    '.PPM',
+    '.bmp',
+    '.BMP']
 
 
 def is_image_file(filename):
@@ -102,6 +112,8 @@ def mkdir_and_rename(path):
 # ----------------------------------------
 # get uint8 image of size HxWxn_channles (RGB)
 # ----------------------------------------
+
+
 def imread_uint(path, n_channels=3):
     #  input: path
     # output: HxWx3(RGB or GGG), or HxWx1 (G)
@@ -129,9 +141,13 @@ def imsave(img, img_path):
 def uint2tensor4(img):
     if img.ndim == 2:
         img = np.expand_dims(img, axis=2)
-    return torch.from_numpy(np.ascontiguousarray(img)).permute(2, 0, 1).float().div(1.0).unsqueeze(0)
+    return torch.from_numpy(
+        np.ascontiguousarray(img)).permute(
+        2, 0, 1).float().div(1.0).unsqueeze(0)
 
 # convert torch tensor to uint
+
+
 def tensor2uint(img):
     img = img.data.squeeze().float().clamp_(0, 255).cpu().numpy()
     if img.ndim == 3:
@@ -141,13 +157,15 @@ def tensor2uint(img):
 # ----------
 # PSNR
 # ----------
+
+
 def calculate_psnr(img1, img2, border=0):
     # img1 and img2 have range [0, 255]
     if not img1.shape == img2.shape:
         raise ValueError('Input images must have the same dimensions.')
     h, w = img1.shape[:2]
-    img1 = img1[border:h-border, border:w-border]
-    img2 = img2[border:h-border, border:w-border]
+    img1 = img1[border:h - border, border:w - border]
+    img2 = img2[border:h - border, border:w - border]
 
     img1 = img1.astype(np.float64)
     img2 = img2.astype(np.float64)
@@ -156,5 +174,6 @@ def calculate_psnr(img1, img2, border=0):
         return float('inf')
     return 20 * math.log10(255.0 / math.sqrt(mse))
 
+
 if __name__ == '__main__':
-    img = imread_uint('test.bmp',3)
+    img = imread_uint('test.bmp', 3)

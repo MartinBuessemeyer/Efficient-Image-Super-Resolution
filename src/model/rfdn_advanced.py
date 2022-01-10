@@ -66,4 +66,5 @@ class RFDNAdvanced(nn.Module):
     def prune(self):
         for block in [self.B1, self.B2, self.B3, self.B4]:
             for srb in [block.srb1, block.srb2, block.srb3]:
-                prune.ln_structured(srb.conv3.conv,"weight", amount=0.1, n=1, dim=0)
+                prune.ln_structured(
+                    srb.conv3.conv, "weight", amount=0.1, n=1, dim=0)
