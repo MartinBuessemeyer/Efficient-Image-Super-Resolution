@@ -37,6 +37,7 @@ sh ./src/run.sh
 ```
 
 4. The preferred way to view results is via WandB.
+Additionally, results are stored in the `experiment` folder.
  
 ## Authors
 
