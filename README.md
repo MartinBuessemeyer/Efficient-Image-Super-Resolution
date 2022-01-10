@@ -1,6 +1,6 @@
 # Efficient Image Super Resolution
 
-This repository conatains the source for our Machine Intelligence with Deep Learning (MIDL) seminar topic _Efficient Image Super Resolution_ from the winter term 2021/2022.
+This repository contains the source for our Machine Intelligence with Deep Learning (MIDL) seminar topic _Efficient Image Super Resolution_ from the winter term 2021/2022.
 
 The project goal is to extend the already existing the [Residual Feature Distillation Network](https://arxiv.org/abs/2009.11551) to increase speed and accuracy while simultaneously decreasing model size.  
 
@@ -27,7 +27,7 @@ sh ./scripts/build-image-enroot.sh
 
 ## How to execute
 
-1. Run the container. The following steps should be exuted inside the enroot continer.
+1. Run the container. The following steps should be executed inside the enroot container.
 
 2. Adjust the `src/run.sh`. You can find all the available options in the `src/options.py`. 
 
@@ -36,6 +36,8 @@ sh ./scripts/build-image-enroot.sh
 sh ./src/run.sh
 ```
 
+4. The preferred way to view results is via WandB.
+ 
 ## Authors
 
 Martin Büßemeyer, Björn Daase, and Maximilian Kleissl
