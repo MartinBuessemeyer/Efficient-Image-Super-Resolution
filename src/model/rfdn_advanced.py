@@ -59,10 +59,8 @@ class RFDNAdvanced(nn.Module):
         self.scale_idx = scale_idx
 
     def switch_to_deploy(self):
-        self.B1.switch_to_deploy()
-        self.B2.switch_to_deploy()
-        self.B3.switch_to_deploy()
-        self.B4.switch_to_deploy()
+        for block in [self.B1, self.B2, self.B3, self.B4]:
+            block.switch_to_deploy()
 
     def prune(self):
         for block in [self.B1, self.B2, self.B3, self.B4]:

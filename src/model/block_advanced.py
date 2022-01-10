@@ -306,9 +306,8 @@ class RFDB(nn.Module):
         return out_fused
 
     def switch_to_deploy(self):
-        self.srb1.switch_to_deploy()
-        self.srb2.switch_to_deploy()
-        self.srb3.switch_to_deploy()
+        for srb in [self.srb1, self.srb2, self.srb3]:
+            srb.switch_to_deploy()
 
 
 def pixelshuffle_block(

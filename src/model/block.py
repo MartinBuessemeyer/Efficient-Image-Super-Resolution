@@ -205,6 +205,9 @@ class RFDB(nn.Module):
         out_fused = self.esa(self.c5(out))
 
         return out_fused
+    
+    def switch_to_deploy(self):
+        pass
 
 
 def pixelshuffle_block(
