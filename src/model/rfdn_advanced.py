@@ -10,6 +10,16 @@ def make_model(args, parent=False):
     model = RFDNAdvanced(args)
     return model
 
+def _merge_identity_mask(current_mask, new_mask, device):
+    combined_mask = []
+    new_mask_idx_offset = 0
+    for idx in range(len(current_mask)):
+        if not current_mask[idx]:
+            new_mask_idx_offset += 1
+            combined_mask.append(False)
+        else:
+            combined_mask.append(new_mask[idx + new_mask_idx_offset])
+    return torch.tensor(combined_mask, device=device)
 
 def _get_new_parameter(new_weight_or_bias, device):
     return torch.nn.Parameter(new_weight_or_bias.to(device=device))
@@ -19,7 +29,7 @@ def _get_mask_for_pruning(srb):
     eval_conv = srb.get_equivalent_conv_layer()
     eval_conv = prune.ln_structured(eval_conv, "weight", amount=0.1, n=1, dim=0)
     mask = (eval_conv.weight.sum(dim=(1, 2, 3)) != 0)
-    num_filters_remaining = torch.sum(mask)
+    num_filters_remaining = int(torch.sum(mask)
     return mask, num_filters_remaining
 
 
@@ -118,7 +128,7 @@ class RFDNAdvanced(nn.Module):
                 mask, num_filters_remaining = _get_mask_for_pruning(srb)
                 block.srbs[srb_idx] = _get_pruned_srb_by_mask(srb, mask, num_filters_remaining, self.device)
                 if srb_idx == 0:
-                    block.srbs[srb_idx].identity_mask = torch.logical_and(srb.identity_mask, mask.to(srb.identity_mask)).to(self.device)
+                    block.srbs[srb_idx].identity_mask = _merge_identity_mask(srb.identity_mask, mask, self.device)
                 block.distilled_layers[srb_idx + 1] = _get_pruned_subsequent_distilled_layer_by_mask(
                     block.distilled_layers[srb_idx + 1], mask, num_filters_remaining, self.device)
                 if srb_idx < len(block.srbs) - 1:
