@@ -31,12 +31,6 @@ class Loss(nn.modules.loss._Loss):
                     loss_type[3:],
                     rgb_range=args.rgb_range
                 )
-            elif loss_type.find('GAN') >= 0:
-                module = import_module('loss.adversarial')
-                loss_function = getattr(module, 'Adversarial')(
-                    args,
-                    loss_type
-                )
 
             self.loss.append({
                 'type': loss_type,
