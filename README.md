@@ -1,91 +1,50 @@
-# Efficient-Image-Super-Resolution
+# Efficient Image Super Resolution
 
-## SLURM 
+This repository contains the source for our Machine Intelligence with Deep Learning (MIDL) seminar topic _Efficient Image Super Resolution_ from the winter term 2021/2022.
 
-#### Execute Trainings run / demo.sh
+The project goal is to extend the already existing the [Residual Feature Distillation Network](https://arxiv.org/abs/2009.11551) to increase speed and accuracy while simultaneously decreasing model size.  
 
-1. Adjust the src/demo.sh
-2. (check if you have to do this ) Adjust the mounting in run-training.sh: e.g. server 03 has no ssd1 only ssd.
-3. sbatch -o <training_name>.txt -w fb10dl<machine> --gres gpu:1 -p training run-training.sh
+## Set Up
 
-#### Execute container
-`srun -w fb10dl06 --gres gpu:1 --container-image /enroot_share/midl21t1/eisr.sqsh --container-mounts=/home/midl21t1/Efficient-Image-Super-Resolution:/home/midl21t1/Efficient-Image-Super-Resolution,/mnt/ssd1/midl21t1/datasets/:/mnt/ssd1/midl21t1/datasets/ --container-workdir=/home/midl21t1/Efficient-Image-Super-Resolution --container-writable --pty bash`
+### General
 
-
-## Dependencies
-* Python 3.6
-* PyTorch >= 1.0.0
-* numpy
-* skimage
-* **imageio**
-* matplotlib
-* tqdm
-* cv2 >= 3.xx (Only if you want to use video input/output)
-
-## Code
-Clone this repository into any place you want.
+1. Clone the repository.
 ```bash
-git clone https://github.com/thstkdgus35/EDSR-PyTorch
-cd EDSR-PyTorch
+git clone git@github.com:MartinBuessemeyer/Efficient-Image-Super-Resolution.git
 ```
 
-## Quickstart (Demo)
-You can test our super-resolution algorithm with your images. Place your images in ``test`` folder. (like ``test/<your_image>``) We support **png** and **jpeg** files.
+2. Get the data sets
+    - DIV2K
+    - Set5
+    - Set14 
+    - BSD100
+    - Urban100
 
-Run the script in ``src`` folder. Before you run the demo, please uncomment the appropriate line in ```demo.sh``` that you want to execute.
+3. Build the enroot container. This will automatically handle all dependencies for you.
 ```bash
-cd src       # You are now in */EDSR-PyTorch/src
-sh demo.sh
+sh ./scripts/build-image-enroot.sh
 ```
 
-You can find the result images from ```experiment/test/results``` folder.
+## How to execute
 
-| Model | Scale | File name (.pt) | Parameters | ****PSNR** |
-|  ---  |  ---  | ---       | ---        | ---  |
-| **EDSR** | 2 | EDSR_baseline_x2 | 1.37 M | 34.61 dB |
-| | | *EDSR_x2 | 40.7 M | 35.03 dB |
-| | 3 | EDSR_baseline_x3 | 1.55 M | 30.92 dB |
-| | | *EDSR_x3 | 43.7 M | 31.26 dB |
-| | 4 | EDSR_baseline_x4 | 1.52 M | 28.95 dB |
-| | | *EDSR_x4 | 43.1 M | 29.25 dB |
-| **MDSR** | 2 | MDSR_baseline | 3.23 M | 34.63 dB |
-| | | *MDSR | 7.95 M| 34.92 dB |
-| | 3 | MDSR_baseline | | 30.94 dB |
-| | | *MDSR | | 31.22 dB |
-| | 4 | MDSR_baseline | | 28.97 dB |
-| | | *MDSR | | 29.24 dB |
+1. Run the container. The following steps should be executed inside the enroot container.
 
-*Baseline models are in ``experiment/model``. Please download our final models from [here](https://cv.snu.ac.kr/research/EDSR/model_pytorch.tar) (542MB)
-**We measured PSNR using DIV2K 0801 ~ 0900, RGB channels, without self-ensemble. (scale + 2) pixels from the image boundary are ignored.
+2. Adjust the `src/run.sh`. You can find all the available options in the `src/options.py`. 
 
-You can evaluate your models with widely-used benchmark datasets:
-
-[Set5 - Bevilacqua et al. BMVC 2012](http://people.rennes.inria.fr/Aline.Roumy/results/SR_BMVC12.html),
-
-[Set14 - Zeyde et al. LNCS 2010](https://sites.google.com/site/romanzeyde/research-interests),
-
-[B100 - Martin et al. ICCV 2001](https://www2.eecs.berkeley.edu/Research/Projects/CS/vision/bsds/),
-
-[Urban100 - Huang et al. CVPR 2015](https://sites.google.com/site/jbhuang0604/publications/struct_sr).
-
-For these datasets, we first convert the result images to YCbCr color space and evaluate PSNR on the Y channel only. You can download [benchmark datasets](https://cv.snu.ac.kr/research/EDSR/benchmark.tar) (250MB). Set ``--dir_data <where_benchmark_folder_located>`` to evaluate the EDSR and MDSR with the benchmarks.
-
-You can download some results from [here](https://cv.snu.ac.kr/research/EDSR/result_image/edsr-results.tar).
-The link contains **EDSR+_baseline_x4** and **EDSR+_x4**.
-Otherwise, you can easily generate result images with ``demo.sh`` scripts.
-
-## How to train EDSR and MDSR
-We used [DIV2K](http://www.vision.ee.ethz.ch/%7Etimofter/publications/Agustsson-CVPRW-2017.pdf) dataset to train our model. Please download it from [here](https://cv.snu.ac.kr/research/EDSR/DIV2K.tar) (7.1GB).
-
-Unpack the tar file to any place you want. Then, change the ```dir_data``` argument in ```src/option.py``` to the place where DIV2K images are located.
-
-We recommend you to pre-process the images before training. This step will decode all **png** files and save them as binaries. Use ``--ext sep_reset`` argument on your first run. You can skip the decoding part and use saved binaries with ``--ext sep`` argument.
-
-If you have enough RAM (>= 32GB), you can use ``--ext bin`` argument to pack all DIV2K images in one binary file.
-
-You can train EDSR and MDSR by yourself. All scripts are provided in the ``src/demo.sh``. Note that EDSR (x3, x4) requires pre-trained EDSR (x2). You can ignore this constraint by removing ```--pre_train <x2 model>``` argument.
-
+3. Run the `src/run.sh`.
 ```bash
-cd src       # You are now in */EDSR-PyTorch/src
-sh demo.sh
+sh ./src/run.sh
+```
+
+4. The preferred way to view results is via WandB.
+Additionally, results are stored in the `experiment` folder.
+ 
+## Authors
+
+Martin Büßemeyer, Björn Daase, and Maximilian Kleissl
+
+## License
+
+```
+# SPDX-License-Identifier: MIT
 ```

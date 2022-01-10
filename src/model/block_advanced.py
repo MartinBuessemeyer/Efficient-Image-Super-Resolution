@@ -1,21 +1,41 @@
 from collections import OrderedDict
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
 
 
-def conv_layer(in_channels, out_channels, kernel_size, stride=1, dilation=1, groups=1):
+def conv_layer(
+        in_channels,
+        out_channels,
+        kernel_size,
+        stride=1,
+        dilation=1,
+        groups=1):
     padding = int((kernel_size - 1) / 2) * dilation
-    return nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding=padding, bias=True, dilation=dilation,
-                     groups=groups)
+    return nn.Conv2d(
+        in_channels,
+        out_channels,
+        kernel_size,
+        stride,
+        padding=padding,
+        bias=True,
+        dilation=dilation,
+        groups=groups)
+
 
 def conv_bn(in_channels, out_channels, kernel_size):
     result = nn.Sequential()
-    result.add_module('conv', conv_layer(in_channels, out_channels, kernel_size))
+    result.add_module(
+        'conv',
+        conv_layer(
+            in_channels,
+            out_channels,
+            kernel_size))
     result.add_module('bn', nn.BatchNorm2d(num_features=out_channels))
     return result
+
 
 def norm(norm_type, nc):
     norm_type = norm_type.lower()
@@ -49,14 +69,30 @@ def get_valid_padding(kernel_size, dilation):
     return padding
 
 
-def conv_block(in_nc, out_nc, kernel_size, stride=1, dilation=1, groups=1, bias=True,
-               pad_type='zero', norm_type=None, act_type='relu'):
+def conv_block(
+        in_nc,
+        out_nc,
+        kernel_size,
+        stride=1,
+        dilation=1,
+        groups=1,
+        bias=True,
+        pad_type='zero',
+        norm_type=None,
+        act_type='relu'):
     padding = get_valid_padding(kernel_size, dilation)
     p = pad(pad_type, padding) if pad_type and pad_type != 'zero' else None
     padding = padding if pad_type == 'zero' else 0
 
-    c = nn.Conv2d(in_nc, out_nc, kernel_size=kernel_size, stride=stride, padding=padding,
-                  dilation=dilation, bias=bias, groups=groups)
+    c = nn.Conv2d(
+        in_nc,
+        out_nc,
+        kernel_size=kernel_size,
+        stride=stride,
+        padding=padding,
+        dilation=dilation,
+        bias=bias,
+        groups=groups)
     a = activation(act_type) if act_type else None
     n = norm(norm_type, out_nc) if norm_type else None
     return sequential(p, c, n, a)
@@ -135,6 +171,7 @@ class ESA(nn.Module):
 
         return x * m
 
+
 class SRB(nn.Module):
     def __init__(self, in_channels, out_channels, activation, deploy=False):
         super(SRB, self).__init__()
@@ -149,7 +186,8 @@ class SRB(nn.Module):
         else:
             self.conv3 = conv_bn(in_channels, out_channels, 3)
             self.conv1 = conv_bn(in_channels, out_channels, 1)
-            self.identity = nn.BatchNorm2d(num_features=in_channels) if out_channels == in_channels else None
+            self.identity = nn.BatchNorm2d(
+                num_features=in_channels) if out_channels == in_channels else None
 
     def forward(self, input):
         if self.deploy:
@@ -159,20 +197,20 @@ class SRB(nn.Module):
             conv1 = (self.conv1(input))
             residual = self.activation(conv3 + conv1 + input)
 
-        
         return residual
 
     def get_equivalent_kernel_and_bias(self):
         kernel_3x3, bias_3x3 = self._fuse_bn_tensor(self.conv3)
         kernel_1x1, bias_1x1 = self._fuse_bn_tensor(self.conv1)
         kernel_id, bias_id = self._fuse_bn_tensor(self.identity)
-        return kernel_3x3 + self.pad_1x1_to_3x3_tensor(kernel_1x1) + kernel_id, bias_3x3 + bias_1x1 + bias_id
+        return kernel_3x3 + \
+            self.pad_1x1_to_3x3_tensor(kernel_1x1) + kernel_id, bias_3x3 + bias_1x1 + bias_id
 
     def pad_1x1_to_3x3_tensor(self, kernel_1x1):
         if kernel_1x1 is None:
             return 0
         else:
-            return torch.nn.functional.pad(kernel_1x1, [1,1,1,1])
+            return torch.nn.functional.pad(kernel_1x1, [1, 1, 1, 1])
 
     def _fuse_bn_tensor(self, branch):
         if branch is None:
@@ -188,10 +226,12 @@ class SRB(nn.Module):
             assert isinstance(branch, nn.BatchNorm2d)
             if not hasattr(self, 'id_tensor'):
                 input_dim = self.in_channels
-                kernel_value = np.zeros((self.in_channels, input_dim, 3, 3), dtype=np.float32)
+                kernel_value = np.zeros(
+                    (self.in_channels, input_dim, 3, 3), dtype=np.float32)
                 for i in range(self.in_channels):
                     kernel_value[i, i % input_dim, 1, 1] = 1
-                self.id_tensor = torch.from_numpy(kernel_value).to(branch.weight.device)
+                self.id_tensor = torch.from_numpy(
+                    kernel_value).to(branch.weight.device)
             kernel = self.id_tensor
             running_mean = branch.running_mean
             running_var = branch.running_var
@@ -220,10 +260,8 @@ class SRB(nn.Module):
         self.deploy = True
 
 
-
-
 class RFDB(nn.Module):
-    def __init__(self, in_channels, distillation_rate=0.25):
+    def __init__(self, in_channels):
         super(RFDB, self).__init__()
         self.distilled_channels = in_channels // 2
         self.remaining_channels = in_channels
@@ -268,12 +306,16 @@ class RFDB(nn.Module):
         return out_fused
 
     def switch_to_deploy(self):
-        self.srb1.switch_to_deploy()
-        self.srb2.switch_to_deploy()
-        self.srb3.switch_to_deploy()
+        for srb in [self.srb1, self.srb2, self.srb3]:
+            srb.switch_to_deploy()
 
 
-def pixelshuffle_block(in_channels, out_channels, upscale_factor=2, kernel_size=3, stride=1):
+def pixelshuffle_block(
+        in_channels,
+        out_channels,
+        upscale_factor=2,
+        kernel_size=3,
+        stride=1):
     conv = conv_layer(in_channels, out_channels *
                       (upscale_factor ** 2), kernel_size, stride)
     pixel_shuffle = nn.PixelShuffle(upscale_factor)

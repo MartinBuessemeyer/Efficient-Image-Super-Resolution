@@ -1,8 +1,9 @@
 import torch
 import torch.nn as nn
+import torch.nn.utils.prune as prune
+
 import model.block_advanced as B
 from model import common
-import torch.nn.utils.prune as prune
 
 
 def make_model(args, parent=False):
@@ -58,12 +59,11 @@ class RFDNAdvanced(nn.Module):
         self.scale_idx = scale_idx
 
     def switch_to_deploy(self):
-        self.B1.switch_to_deploy()
-        self.B2.switch_to_deploy()
-        self.B3.switch_to_deploy()
-        self.B4.switch_to_deploy()
+        for block in [self.B1, self.B2, self.B3, self.B4]:
+            block.switch_to_deploy()
 
     def prune(self):
         for block in [self.B1, self.B2, self.B3, self.B4]:
             for srb in [block.srb1, block.srb2, block.srb3]:
-                prune.ln_structured(srb.conv3.conv,"weight", amount=0.1, n=1, dim=0)
+                prune.ln_structured(
+                    srb.conv3.conv, "weight", amount=0.1, n=1, dim=0)

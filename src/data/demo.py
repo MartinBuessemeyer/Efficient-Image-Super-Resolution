@@ -1,12 +1,12 @@
 import os
 
-from data import common
-
-import numpy as np
 import imageio
-
+import numpy as np
 import torch
 import torch.utils.data as data
+
+from data import common
+
 
 class Demo(data.Dataset):
     def __init__(self, args, name='Demo', train=False, benchmark=False):
@@ -36,4 +36,3 @@ class Demo(data.Dataset):
 
     def set_scale(self, idx_scale):
         self.idx_scale = idx_scale
-
