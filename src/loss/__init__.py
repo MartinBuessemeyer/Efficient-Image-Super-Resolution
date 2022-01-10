@@ -2,14 +2,14 @@ import os
 from importlib import import_module
 
 import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-
 import numpy as np
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+matplotlib.use('Agg')
+
 
 class Loss(nn.modules.loss._Loss):
     def __init__(self, args, ckp):
@@ -31,12 +31,6 @@ class Loss(nn.modules.loss._Loss):
                     loss_type[3:],
                     rgb_range=args.rgb_range
                 )
-            elif loss_type.find('GAN') >= 0:
-                module = import_module('loss.adversarial')
-                loss_function = getattr(module, 'Adversarial')(
-                    args,
-                    loss_type
-                )
 
             self.loss.append({
                 'type': loss_type,
@@ -44,7 +38,8 @@ class Loss(nn.modules.loss._Loss):
                 'function': loss_function}
             )
             if loss_type.find('GAN') >= 0:
-                self.loss.append({'type': 'DIS', 'weight': 1, 'function': None})
+                self.loss.append(
+                    {'type': 'DIS', 'weight': 1, 'function': None})
 
         if len(self.loss) > 1:
             self.loss.append({'type': 'Total', 'weight': 0, 'function': None})
@@ -58,13 +53,15 @@ class Loss(nn.modules.loss._Loss):
 
         device = torch.device('cpu' if args.cpu else 'cuda')
         self.loss_module.to(device)
-        if args.precision == 'half': self.loss_module.half()
+        if args.precision == 'half':
+            self.loss_module.half()
         if not args.cpu and args.n_GPUs > 1:
             self.loss_module = nn.DataParallel(
                 self.loss_module, range(args.n_GPUs)
             )
 
-        if args.load != '': self.load(ckp.dir, cpu=args.cpu)
+        if args.load != '':
+            self.load(ckp.dir, cpu=args.cpu)
 
     def forward(self, sr, hr):
         losses = []
@@ -125,5 +122,5 @@ class Loss(nn.modules.loss._Loss):
         self.log = torch.load(os.path.join(apath, 'loss_log.pt'))
         for l in self.get_loss_module():
             if hasattr(l, 'scheduler'):
-                for _ in range(len(self.log)): l.scheduler.step()
-
+                for _ in range(len(self.log)):
+                    l.scheduler.step()
