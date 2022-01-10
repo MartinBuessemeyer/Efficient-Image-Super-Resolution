@@ -30,7 +30,7 @@ def _get_mask_for_pruning(srb):
     eval_conv = srb.get_equivalent_conv_layer()
     eval_conv = prune.ln_structured(eval_conv, "weight", amount=0.1, n=1, dim=0)
     mask = (eval_conv.weight.sum(dim=(1, 2, 3)) != 0)
-    num_filters_remaining = int(torch.sum(mask)
+    num_filters_remaining = int(torch.sum(mask))
     return mask, num_filters_remaining
 
 
