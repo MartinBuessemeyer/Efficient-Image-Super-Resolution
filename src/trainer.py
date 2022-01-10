@@ -82,7 +82,7 @@ class Trainer:
                 params=dict(
                     self.model.model.named_parameters())).render(
                 "model_plot_" +
-                str(pruning_counter),
+                str(self.pruning_counter),
                 format="png")
 
         self.loss.step()
