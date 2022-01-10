@@ -133,4 +133,5 @@ class RFDNAdvanced(nn.Module):
                 if srb_idx < len(block.srbs) - 1:
                     block.srbs[srb_idx + 1] = _get_pruned_subsequent_srb_block(block.srbs[srb_idx + 1],
                                                                                mask, num_filters_remaining, self.device)
+        return mask.shape[0], num_filters_remaining
 

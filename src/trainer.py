@@ -70,11 +70,9 @@ class Trainer:
         self.epochs_since_pruning += 1
         if self.epochs_since_pruning >= self.epochs_before_pruning:
             self.epochs_since_pruning = 0
-            prev_layer_size = self.model.model.B1.srbs[0].conv3.conv.weight.shape[0]
-            self.model.model.prune()
+            prev_layer_size, new_layer_size = self.model.model.prune()
             self.model.model.to(self.device)
             self.pruning_counter += 1
-            new_layer_size = self.model.model.B1.srbs[0].conv3.conv.weight.shape[0]
             self.ckp.write_log(f'[Epoch {epoch}]\tPruning model from layer size {prev_layer_size} to {new_layer_size}')
 
         self.loss.step()
@@ -91,6 +89,7 @@ class Trainer:
         self.loader_train.dataset.set_scale(0)
         sum_loss = 0
         for batch, (lr, hr, _,) in enumerate(self.loader_train):
+            print(batch)
             lr, hr = self.prepare(lr, hr)
             timer_data.hold()
             timer_model.tic()
