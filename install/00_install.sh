@@ -22,7 +22,6 @@ RUN pip install imageio \
     pillow \
     scikit-image \
     torchvision \
-    torchviz \
     tqdm \
     wandb
 

@@ -5,7 +5,6 @@ import torch
 import torch.nn.utils.prune as prune
 import wandb
 from skimage.metrics import peak_signal_noise_ratio, structural_similarity
-from torchviz import make_dot
 from tqdm import tqdm
 
 import utility as utility
@@ -77,13 +76,6 @@ class Trainer:
                 torch.empty(1, 3, 480, 360),
                 device=self.device)
             y = self.model.model(x)
-            make_dot(
-                y.mean(),
-                params=dict(
-                    self.model.model.named_parameters())).render(
-                "model_plot_" +
-                str(self.pruning_counter),
-                format="png")
 
         self.loss.step()
         epoch = self.optimizer.get_last_epoch() + 1
