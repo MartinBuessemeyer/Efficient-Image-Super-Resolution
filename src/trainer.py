@@ -2,7 +2,7 @@ from decimal import Decimal
 
 import numpy as np
 import torch
-import torch.nn.utils as utils
+import utils
 import torch.nn.utils.prune as prune
 import wandb
 from skimage.metrics import peak_signal_noise_ratio, structural_similarity
