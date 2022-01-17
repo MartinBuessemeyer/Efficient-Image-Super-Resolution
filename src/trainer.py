@@ -25,7 +25,8 @@ def add_test_wandb_logs(
         dataset_to_scale_to_sum_ssim,
         mean_time_forward_pass,
         step_name,
-        epoch):
+        epoch,
+        test_csv_log_length):
     if args.wandb_disable:
         return
     test_logs = {dataset: {} for dataset in dataset_to_scale_to_sum_psnr.keys()}
@@ -34,7 +35,8 @@ def add_test_wandb_logs(
         for dataset, values_by_scale in metric_dict.items():
             for scale, sum_metric in values_by_scale.items():
                 metric_key = f'{metric}_scale_{scale}'
-                ckp.add_csv_result(f'{step_name}.{dataset}.{metric_key}', sum_metric, epoch)
+                ckp.add_csv_result(f'{step_name}.{dataset}.{metric_key}', sum_metric,
+                                   epoch if test_csv_log_length else None)
                 test_logs[dataset][metric_key] = sum_metric
 
     add_to_testlog("loss", dataset_to_scale_to_sum_losses)
@@ -42,7 +44,8 @@ def add_test_wandb_logs(
     add_to_testlog("ssim", dataset_to_scale_to_sum_ssim)
 
     test_logs[f'{step_name}.mean_forward_pass_time'] = mean_time_forward_pass
-    ckp.add_csv_result(f'{step_name}.mean_forward_pass_time', mean_time_forward_pass, epoch)
+    ckp.add_csv_result(f'{step_name}.mean_forward_pass_time', mean_time_forward_pass,
+                       epoch if test_csv_log_length else None)
     wandb.log({step_name: test_logs}, step=epoch)
 
 
@@ -130,7 +133,7 @@ class Trainer:
         self.error_last = self.loss.log[-1, -1]
         self.optimizer.schedule()
 
-    def test_or_validate(self, loader, step_name):
+    def test_or_validate(self, loader, step_name, test_csv_log_length=False):
         torch.set_grad_enabled(False)
 
         epoch = self.optimizer.get_last_epoch()
@@ -226,7 +229,7 @@ class Trainer:
             dataset_to_scale_to_sum_ssim,
             mean_time_forward_pass,
             step_name,
-            epoch)
+            epoch, test_csv_log_length)
 
         torch.set_grad_enabled(True)
 
@@ -247,7 +250,7 @@ class Trainer:
         return psnr, ssim
 
     def validate(self):
-        self.test_or_validate(self.loader_validate, 'validate')
+        self.test_or_validate(self.loader_validate, 'validate', True)
 
     def test(self):
         self.test_or_validate(self.loader_test, 'test')
