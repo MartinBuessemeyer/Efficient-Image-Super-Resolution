@@ -55,9 +55,6 @@ class Trainer:
         self.model = my_model
         self.loss = my_loss
         self.optimizer = utility.make_optimizer(args, self.model)
-        self.epochs_since_pruning = 0
-        self.epochs_before_pruning = args.epochs_before_pruning
-        self.pruning_counter = 0
         self.device = torch.device('cpu' if self.args.cpu else 'cuda')
 
         if self.args.load != '':
@@ -67,12 +64,9 @@ class Trainer:
 
     def train(self):
         epoch = self.optimizer.get_last_epoch() + 1
-        self.epochs_since_pruning += 1
-        if self.epochs_since_pruning >= self.epochs_before_pruning:
-            self.epochs_since_pruning = 0
+        if pruning_scheduler.shouldPrune():
             prev_layer_size, new_layer_size = self.model.model.prune()
             self.model.model.to(self.device)
-            self.pruning_counter += 1
             self.ckp.write_log(f'[Epoch {epoch}]\tPruning model from layer size {prev_layer_size} to {new_layer_size}')
 
         self.loss.step()
