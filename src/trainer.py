@@ -14,7 +14,7 @@ def init_wandb_logging(args, ckp):
         wandb.init(project=args.wandb_project_name, entity="midl21t1")
         wandb.config.update(args)
         for key, val in wandb.config.items():
-            ckp.add_csv_result(key, val, 1)
+            ckp.add_csv_result(f'config.{key}', val, 1)
 
 
 def add_test_wandb_logs(
