@@ -2,7 +2,6 @@ from decimal import Decimal
 
 import numpy as np
 import torch
-import torch.nn.utils.prune as prune
 import wandb
 from skimage.metrics import peak_signal_noise_ratio, structural_similarity
 from tqdm import tqdm
@@ -67,18 +66,16 @@ class Trainer:
         self.error_last = 1e8
 
     def train(self):
+        epoch = self.optimizer.get_last_epoch() + 1
         self.epochs_since_pruning += 1
         if self.epochs_since_pruning >= self.epochs_before_pruning:
             self.epochs_since_pruning = 0
-            self.model.model.prune()
+            prev_layer_size, new_layer_size = self.model.model.prune()
+            self.model.model.to(self.device)
             self.pruning_counter += 1
-            x = torch.ones_like(
-                torch.empty(1, 3, 480, 360),
-                device=self.device)
-            y = self.model.model(x)
+            self.ckp.write_log(f'[Epoch {epoch}]\tPruning model from layer size {prev_layer_size} to {new_layer_size}')
 
         self.loss.step()
-        epoch = self.optimizer.get_last_epoch() + 1
         lr = self.optimizer.get_lr()
 
         self.ckp.write_log(
@@ -101,7 +98,7 @@ class Trainer:
             loss = self.loss(sr, hr)
             loss.backward()
             if self.args.gclip > 0:
-                utils.clip_grad_value_(
+                torch.nn.utils.clip_grad_value_(
                     self.model.parameters(),
                     self.args.gclip
                 )
@@ -120,9 +117,9 @@ class Trainer:
             timer_data.tic()
 
             sum_loss += loss
-
-        wandb.log({'train': {'loss': sum_loss / len(self.loader_train),
-                             'lr': self.optimizer.get_lr()}})
+        if not self.args.wandb_disable:
+            wandb.log({'train': {'loss': sum_loss / len(self.loader_train),
+                                 'lr': self.optimizer.get_lr()}})
 
         self.loss.end_log(len(self.loader_train))
         self.error_last = self.loss.log[-1, -1]

@@ -25,6 +25,7 @@ def conv_layer(
         groups=groups)
 
 
+
 def conv_bn(in_channels, out_channels, kernel_size):
     result = nn.Sequential()
     result.add_module(
@@ -180,6 +181,7 @@ class SRB(nn.Module):
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.deploy = deploy
+        self.identity_mask = torch.ones(out_channels, dtype=torch.bool)
 
         if self.deploy:
             self.reparam = conv_layer(in_channels, out_channels, 3)
@@ -195,16 +197,21 @@ class SRB(nn.Module):
         else:
             conv3 = (self.conv3(input))
             conv1 = (self.conv1(input))
-            residual = self.activation(conv3 + conv1 + input)
+            residual = self.activation(conv3 + conv1 + input[:, self.identity_mask, ...])
 
         return residual
 
-    def get_equivalent_kernel_and_bias(self):
+    def get_equivalent_conv_layer(self):
         kernel_3x3, bias_3x3 = self._fuse_bn_tensor(self.conv3)
         kernel_1x1, bias_1x1 = self._fuse_bn_tensor(self.conv1)
         kernel_id, bias_id = self._fuse_bn_tensor(self.identity)
-        return kernel_3x3 + \
-            self.pad_1x1_to_3x3_tensor(kernel_1x1) + kernel_id, bias_3x3 + bias_1x1 + bias_id
+        res_kernel = kernel_3x3 + self.pad_1x1_to_3x3_tensor(kernel_1x1) + kernel_id
+        res_bias = bias_3x3 + bias_1x1 + bias_id
+        res_conv = conv_layer(self.in_channels, self.out_channels, 3)
+        res_conv.weight = torch.nn.Parameter(res_kernel)
+        res_conv.bias = torch.nn.Parameter(res_bias)
+        return res_conv
+
 
     def pad_1x1_to_3x3_tensor(self, kernel_1x1):
         if kernel_1x1 is None:
@@ -245,10 +252,7 @@ class SRB(nn.Module):
     def switch_to_deploy(self):
         if hasattr(self, 'reparam'):
             return
-        kernel, bias = self.get_equivalent_kernel_and_bias()
-        self.reparam = conv_layer(self.in_channels, self.out_channels, 3)
-        self.reparam.weight.data = kernel
-        self.reparam.bias.data = bias
+        self.reparam = self.get_equivalent_conv_layer()
         for para in self.parameters():
             para.detach_()
         self.__delattr__('conv3')
@@ -267,37 +271,37 @@ class RFDB(nn.Module):
         self.remaining_channels = in_channels
         self.activation = activation('lrelu', neg_slope=0.05)
 
-        self.distilled1 = conv_layer(in_channels, self.distilled_channels, 1)
-        self.srb1 = SRB(in_channels, self.remaining_channels, self.activation)
-
-        self.distilled2 = conv_layer(
+        distilled1 = conv_layer(in_channels, self.distilled_channels, 1)
+        distilled2 = conv_layer(
             self.remaining_channels, self.distilled_channels, 1)
-        self.srb2 = SRB(
-            self.remaining_channels, self.remaining_channels, self.activation)
-
-        self.distilled3 = conv_layer(
+        distilled3 = conv_layer(
             self.remaining_channels, self.distilled_channels, 1)
-        self.srb3 = SRB(
-            self.remaining_channels, self.remaining_channels, self.activation)
-
-        self.distilled4 = conv_layer(
+        distilled4 = conv_layer(
             self.remaining_channels, self.distilled_channels, 3)
+        self.distilled_layers = nn.ModuleList([distilled1, distilled2, distilled3, distilled4])
+
+        srb1 = SRB(in_channels, self.remaining_channels, self.activation)
+        srb2 = SRB(
+            self.remaining_channels, self.remaining_channels, self.activation)
+        srb3 = SRB(
+            self.remaining_channels, self.remaining_channels, self.activation)
+        self.srbs = nn.ModuleList([srb1, srb2, srb3])
 
         self.distilled = conv_layer(
             self.distilled_channels * 4, in_channels, 1)
         self.esa = ESA(in_channels, nn.Conv2d)
 
     def forward(self, input):
-        distilled1 = self.activation(self.distilled1(input))
-        srb1 = self.srb1(input)
+        distilled1 = self.activation(self.distilled_layers[0](input))
+        srb1 = self.srbs[0](input)
 
-        distilled2 = self.activation(self.distilled2(srb1))
-        srb2 = self.srb2(srb1)
+        distilled2 = self.activation(self.distilled_layers[1](srb1))
+        srb2 = self.srbs[1](srb1)
 
-        distilled3 = self.activation(self.distilled3(srb2))
-        srb3 = self.srb3(srb2)
+        distilled3 = self.activation(self.distilled_layers[2](srb2))
+        srb3 = self.srbs[2](srb2)
 
-        distilled4 = self.activation(self.distilled4(srb3))
+        distilled4 = self.activation(self.distilled_layers[3](srb3))
 
         out = torch.cat(
             [distilled1, distilled2, distilled3, distilled4], dim=1)
@@ -306,7 +310,7 @@ class RFDB(nn.Module):
         return out_fused
 
     def switch_to_deploy(self):
-        for srb in [self.srb1, self.srb2, self.srb3]:
+        for srb in self.srbs:
             srb.switch_to_deploy()
 
 
