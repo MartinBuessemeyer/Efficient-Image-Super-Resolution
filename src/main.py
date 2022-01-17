@@ -7,6 +7,7 @@ import loss
 import utility
 from option import args
 from trainer import Trainer
+from pruning_scheduler import NoPrune, PruneAfterEpochs
 
 # PyCharm remote debugging setup
 if os.environ.get('REMOTE_PYCHARM_DEBUG_SESSION', False):
@@ -32,7 +33,8 @@ def main():
         loader = data.Data(args)
         _model = model.Model(args, checkpoint)
         _loss = loss.Loss(args, checkpoint) if not args.test_only else None
-        t = Trainer(args, loader, _model, _loss, checkpoint)
+        _pruning_scheduler = NoPrune(None) if args.epochs_before_pruning == None else PruneAfterEpochs(args.epochs_before_pruning)
+        t = Trainer(args, loader, _model, _loss, checkpoint, _pruning_scheduler)
         while not t.terminate():
             t.train()
             t.validate()
