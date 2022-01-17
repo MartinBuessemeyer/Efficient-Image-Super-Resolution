@@ -1,0 +1,216 @@
+wandb_version: 1
+
+G0:
+  desc: null
+  value: 64
+RDNconfig:
+  desc: null
+  value: B
+RDNkSize:
+  desc: null
+  value: 3
+_wandb:
+  desc: null
+  value:
+    cli_version: 0.12.9
+    framework: torch
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    python_version: 3.9.9
+    start_time: 1642430406
+    t:
+      1:
+      - 1
+      4: 3.9.9
+      5: 0.12.9
+      8:
+      - 5
+act:
+  desc: null
+  value: relu
+batch_size:
+  desc: null
+  value: 4
+batch_size_test:
+  desc: null
+  value: 1
+betas:
+  desc: null
+  value:
+  - 0.9
+  - 0.999
+chop:
+  desc: null
+  value: false
+cpu:
+  desc: null
+  value: false
+data_range:
+  desc: null
+  value: 1-800/801-810
+data_test:
+  desc: null
+  value:
+  - DIV2K
+  - Set5
+  - BSD100
+  - Urban100
+data_train:
+  desc: null
+  value:
+  - DIV2K
+data_validate:
+  desc: null
+  value:
+  - DIV2K
+  - Set5
+  - BSD100
+  - Urban100
+debug:
+  desc: null
+  value: false
+decay:
+  desc: null
+  value: '200'
+dilation:
+  desc: null
+  value: false
+dir_data:
+  desc: null
+  value: /home/secret/uni/machine_intelligence_with_dl/datasets
+dir_demo:
+  desc: null
+  value: ../test
+epochs:
+  desc: null
+  value: 5
+epochs_before_pruning:
+  desc: null
+  value: 3
+epsilon:
+  desc: null
+  value: 1.0e-08
+ext:
+  desc: null
+  value: sep
+extend:
+  desc: null
+  value: .
+gamma:
+  desc: null
+  value: 0.5
+gclip:
+  desc: null
+  value: 0
+load:
+  desc: null
+  value: ''
+loss:
+  desc: null
+  value: 1*L1
+lr:
+  desc: null
+  value: 0.0001
+model:
+  desc: null
+  value: RFDN_advanced
+momentum:
+  desc: null
+  value: 0.9
+n_GPUs:
+  desc: null
+  value: 1
+n_colors:
+  desc: null
+  value: 3
+n_feats:
+  desc: null
+  value: 64
+n_resblocks:
+  desc: null
+  value: 16
+n_resgroups:
+  desc: null
+  value: 10
+n_threads:
+  desc: null
+  value: 6
+no_augment:
+  desc: null
+  value: false
+optimizer:
+  desc: null
+  value: ADAM
+patch_size:
+  desc: null
+  value: 96
+pre_train:
+  desc: null
+  value: ''
+precision:
+  desc: null
+  value: single
+print_every:
+  desc: null
+  value: 100
+reduction:
+  desc: null
+  value: 16
+res_scale:
+  desc: null
+  value: 1
+reset:
+  desc: null
+  value: true
+resume:
+  desc: null
+  value: 0
+rgb_range:
+  desc: null
+  value: 255
+save:
+  desc: null
+  value: deleteme
+save_gt:
+  desc: null
+  value: false
+save_models:
+  desc: null
+  value: false
+save_results:
+  desc: null
+  value: false
+scale:
+  desc: null
+  value:
+  - 2
+seed:
+  desc: null
+  value: 1
+self_ensemble:
+  desc: null
+  value: false
+shift_mean:
+  desc: null
+  value: true
+skip_threshold:
+  desc: null
+  value: 100000000.0
+split_batch:
+  desc: null
+  value: 1
+test_every:
+  desc: null
+  value: 1000
+test_only:
+  desc: null
+  value: false
+wandb_disable:
+  desc: null
+  value: false
+wandb_project_name:
+  desc: null
+  value: RFDN
+weight_decay:
+  desc: null
+  value: 0

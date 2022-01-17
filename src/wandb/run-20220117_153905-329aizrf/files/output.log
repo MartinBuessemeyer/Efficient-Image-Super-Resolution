@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/home/secret/uni/machine_intelligence_with_dl/Efficient-Image-Super-Resolution/src/utility.py", line 85, in add_csv_result
+    value = float(value)
+TypeError: float() argument must be a string or a number, not 'list'

@@ -1,0 +1,1 @@
+{"train": {"loss": 18.758014678955078, "lr": 0.0001}, "num_parameters": 738340, "_runtime": 79, "_timestamp": 1642430485, "_step": 0, "_wandb": {"runtime": 233}}
