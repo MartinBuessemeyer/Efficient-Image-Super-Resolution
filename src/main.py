@@ -4,7 +4,6 @@ import torch
 
 import data
 import loss
-import model
 import utility
 from option import args
 from trainer import Trainer
@@ -12,6 +11,7 @@ from trainer import Trainer
 # PyCharm remote debugging setup
 if os.environ.get('REMOTE_PYCHARM_DEBUG_SESSION', False):
     import pydevd_pycharm
+
     pydevd_pycharm.settrace(
         'localhost',
         port=int(
@@ -24,6 +24,7 @@ if os.environ.get('REMOTE_PYCHARM_DEBUG_SESSION', False):
 
 torch.manual_seed(args.seed)
 checkpoint = utility.Checkpoint(args)
+
 
 def main():
     global model
@@ -40,6 +41,7 @@ def main():
         t.test()
 
         checkpoint.done()
+
 
 if __name__ == '__main__':
     main()

@@ -28,15 +28,14 @@ def add_test_wandb_logs(
         epoch):
     if args.wandb_disable:
         return
-    test_logs = {dataset: {}
-                 for dataset in dataset_to_scale_to_sum_psnr.keys()}
+    test_logs = {dataset: {} for dataset in dataset_to_scale_to_sum_psnr.keys()}
 
     def add_to_testlog(metric, metric_dict):
         for dataset, values_by_scale in metric_dict.items():
             for scale, sum_metric in values_by_scale.items():
                 metric_key = f'{metric}_scale_{scale}'
-                test_logs[dataset][metric_key] = sum_metric
                 ckp.add_csv_result(f'{step_name}.{dataset}.{metric_key}', sum_metric, epoch)
+                test_logs[dataset][metric_key] = sum_metric
 
     add_to_testlog("loss", dataset_to_scale_to_sum_losses)
     add_to_testlog("psnr", dataset_to_scale_to_sum_psnr)
@@ -50,7 +49,7 @@ def add_test_wandb_logs(
 class Trainer:
     def __init__(self, args, loader, my_model, my_loss, ckp):
         self.args = args
-        init_wandb_logging(args)
+        init_wandb_logging(args, ckp)
 
         self.scale = args.scale
 
