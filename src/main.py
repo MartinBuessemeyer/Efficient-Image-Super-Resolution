@@ -23,7 +23,7 @@ if os.environ.get('REMOTE_PYCHARM_DEBUG_SESSION', False):
         suspend=False)
 
 torch.manual_seed(args.seed)
-checkpoint = utility.checkpoint(args)
+checkpoint = utility.Checkpoint(args)
 
 def main():
     global model

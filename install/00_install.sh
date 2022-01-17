@@ -23,7 +23,8 @@ RUN pip install imageio \
     scikit-image \
     torchvision \
     tqdm \
-    wandb
+    wandb \
+    pandas
 
 # Install development tool for PyCharm for remote debugging
 RUN pip install pydevd-pycharm~=211.7628.24

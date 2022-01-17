@@ -1,11 +1,11 @@
 import datetime
-import math
 import os
 import time
 from multiprocessing import Process, Queue
 
 import imageio
-import numpy as np
+import math
+import pandas as pd
 import torch
 import torch.optim as optim
 import torch.optim.lr_scheduler as lrs
@@ -38,7 +38,9 @@ class timer():
         self.acc = 0
 
 
-class checkpoint:
+class Checkpoint:
+    EPOCH_KEY = 'Epoch'
+
     def __init__(self, args):
         self.args = args
         self.ok = True
@@ -56,7 +58,8 @@ class checkpoint:
                 print('Continue from epoch {}...'.format(len(self.log)))
             else:
                 args.load = ''
-
+        self.csv_results_file = os.path.join('..', 'experiment', f'{args.save}.csv')
+        self.csv_results_dict = {}
         if args.reset:
             os.system('rm -rf ' + self.dir)
             args.load = ''
@@ -75,6 +78,14 @@ class checkpoint:
             f.write('\n')
 
         self.n_processes = 8
+
+    def add_csv_result(self, key, value, epoch=None):
+        if key in self.csv_results_dict.keys():
+            self.csv_results_dict[key].append(value)
+        else:
+            self.csv_results_dict[key] = [value]
+        if epoch is not None:
+            assert self.csv_results_dict[key] == epoch
 
     def get_path(self, *subdir):
         return os.path.join(self.dir, *subdir)
@@ -98,6 +109,19 @@ class checkpoint:
 
     def done(self):
         self.log_file.close()
+        max_csv_len = max((len(val) for val in self.csv_results_dict.values()))
+        if Checkpoint.EPOCH_KEY not in self.csv_results_dict.keys():
+            self.write_log('Did not find Epoch in csv keys. Cannot use it as an index!')
+        else:
+            if len(self.csv_results_dict[Checkpoint.EPOCH_KEY]) != max_csv_len:
+                self.write_log('Epoch is not the longest column. Logs might not be ordered properly.')
+        # pad the dict entries
+        for key, val in self.csv_results_dict.items():
+            missing_num_entries = max_csv_len - len(val)
+            self.csv_results_dict[key] = val + ([None] * missing_num_entries)
+        df = pd.DataFrame(self.csv_results_dict)
+        df.set_index(Checkpoint.EPOCH_KEY)
+        df.to_csv(self.csv_results_file)
 
     def begin_background(self):
         self.queue = Queue()

@@ -9,14 +9,17 @@ from tqdm import tqdm
 import utility as utility
 
 
-def init_wandb_logging(args):
+def init_wandb_logging(args, ckp):
     if not args.wandb_disable:
         wandb.init(project=args.wandb_project_name, entity="midl21t1")
         wandb.config.update(args)
+        for key, val in wandb.config.items():
+            ckp.add_csv_result(key, val, 1)
 
 
 def add_test_wandb_logs(
         args,
+        ckp,
         dataset_to_scale_to_sum_losses,
         dataset_to_scale_to_sum_psnr,
         dataset_to_scale_to_sum_ssim,
@@ -31,13 +34,16 @@ def add_test_wandb_logs(
     def add_to_testlog(metric, metric_dict):
         for dataset, values_by_scale in metric_dict.items():
             for scale, sum_metric in values_by_scale.items():
-                test_logs[dataset][f'{metric}_scale_{scale}'] = sum_metric
+                metric_key = f'{metric}_scale_{scale}'
+                test_logs[dataset][metric_key] = sum_metric
+                ckp.add_csv_result(f'{step_name}.{dataset}.{metric_key}', sum_metric, epoch)
 
     add_to_testlog("loss", dataset_to_scale_to_sum_losses)
     add_to_testlog("psnr", dataset_to_scale_to_sum_psnr)
     add_to_testlog("ssim", dataset_to_scale_to_sum_ssim)
 
-    test_logs['mean_forward_pass_time'] = mean_time_forward_pass
+    test_logs[f'{step_name}.mean_forward_pass_time'] = mean_time_forward_pass
+    ckp.add_csv_result(f'{step_name}.mean_forward_pass_time', mean_time_forward_pass, epoch)
     wandb.log({step_name: test_logs}, step=epoch)
 
 
@@ -81,6 +87,8 @@ class Trainer:
         self.ckp.write_log(
             '[Epoch {}]\tLearning rate: {:.2e}'.format(epoch, Decimal(lr))
         )
+        self.ckp.add_csv_result('Epoch', epoch, epoch)
+        self.ckp.add_csv_result('lr', lr, epoch)
         self.loss.start_log()
         self.model.train()
 
@@ -118,8 +126,10 @@ class Trainer:
 
             sum_loss += loss
         if not self.args.wandb_disable:
-            wandb.log({'train': {'loss': sum_loss / len(self.loader_train),
+            mean_loss = sum_loss / len(self.loader_train)
+            wandb.log({'train': {'loss': mean_loss,
                                  'lr': self.optimizer.get_lr()}})
+            self.ckp.add_csv_result('train.loss', mean_loss, epoch)
 
         self.loss.end_log(len(self.loader_train))
         self.error_last = self.loss.log[-1, -1]
@@ -163,19 +173,7 @@ class Trainer:
                     sr = utility.quantize(sr, self.args.rgb_range)
                     save_list = [sr]
 
-                    ssim = 0
-                    psnr = 0
-                    for batch_idx in range(batch_size):
-                        sr_numpy = sr[batch_idx, ...].detach().cpu().numpy()
-                        hr_numpy = hr[batch_idx, ...].detach().cpu().numpy()
-                        ssim += structural_similarity(sr_numpy,
-                                                      hr_numpy,
-                                                      channel_axis=0,
-                                                      data_range=self.args.rgb_range)
-                        psnr += peak_signal_noise_ratio(
-                            sr_numpy, hr_numpy, data_range=self.args.rgb_range)
-                    ssim /= batch_size
-                    psnr /= batch_size
+                    psnr, ssim = self.calculate_batch_ssim_psnr(batch_size, hr, sr)
 
                     self.ckp.log[-1, idx_data, idx_scale] += psnr
                     if self.args.save_gt:
@@ -227,6 +225,7 @@ class Trainer:
 
         add_test_wandb_logs(
             self.args,
+            self.ckp,
             dataset_to_scale_to_sum_losses,
             dataset_to_scale_to_sum_psnr,
             dataset_to_scale_to_sum_ssim,
@@ -235,6 +234,22 @@ class Trainer:
             epoch)
 
         torch.set_grad_enabled(True)
+
+    def calculate_batch_ssim_psnr(self, batch_size, hr, sr):
+        psnr = 0
+        ssim = 0
+        for batch_idx in range(batch_size):
+            sr_numpy = sr[batch_idx, ...].detach().cpu().numpy()
+            hr_numpy = hr[batch_idx, ...].detach().cpu().numpy()
+            ssim += structural_similarity(sr_numpy,
+                                          hr_numpy,
+                                          channel_axis=0,
+                                          data_range=self.args.rgb_range)
+            psnr += peak_signal_noise_ratio(
+                sr_numpy, hr_numpy, data_range=self.args.rgb_range)
+        ssim /= batch_size
+        psnr /= batch_size
+        return psnr, ssim
 
     def validate(self):
         self.test_or_validate(self.loader_validate, 'validate')
