@@ -9,6 +9,10 @@ from tqdm import tqdm
 import utility as utility
 
 
+def num_params_of_model(model):
+    return sum((param.numel() for param in model.parameters()))
+
+
 def init_wandb_logging(args, ckp):
     if not args.wandb_disable:
         wandb.init(project=args.wandb_project_name, entity="midl21t1")
@@ -125,7 +129,7 @@ class Trainer:
             sum_loss += loss
         if not self.args.wandb_disable:
             mean_loss = sum_loss / len(self.loader_train)
-            num_parameters = sum((param.numel() for param in self.model.model.parameters()))
+            num_parameters = num_params_of_model(self.model.model)
             wandb.log({'train': {'loss': mean_loss,
                                  'lr': self.optimizer.get_lr()},
                        'num_parameters': num_parameters})
@@ -257,6 +261,9 @@ class Trainer:
 
     def test(self):
         self.test_or_validate(self.loader_test, 'test')
+        num_parameters = num_params_of_model(self.model.model)
+        self.ckp.add_csv_result('num_parameters_production', num_parameters)
+        wandb.log({'num_parameters_production': num_parameters})
 
     def prepare(self, *args):
 
