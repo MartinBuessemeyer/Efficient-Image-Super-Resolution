@@ -85,7 +85,8 @@ class Checkpoint:
         else:
             self.csv_results_dict[key] = [value]
         if epoch is not None:
-            assert self.csv_results_dict[key] == epoch
+            assert len(self.csv_results_dict[key]) == epoch, f'Expected new entry {value} of {key} to be inserted at ' \
+                                                             f'length {epoch} but was {len(self.csv_results_dict[key])}'
 
     def get_path(self, *subdir):
         return os.path.join(self.dir, *subdir)
