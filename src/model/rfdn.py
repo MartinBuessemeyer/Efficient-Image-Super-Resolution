@@ -63,7 +63,4 @@ class RFDN(nn.Module):
         pass
 
     def prune(self):
-        for block in [self.B1, self.B2, self.B3, self.B4]:
-            for conv_layer in [block.c1_r, block.c2_r, block.c3_r]:
-                prune.ln_structured(
-                    conv_layer, "weight", amount=0.1, n=1, dim=0)
+        pass
