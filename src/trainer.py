@@ -71,7 +71,7 @@ class Trainer:
     def train(self):
         epoch = self.optimizer.get_last_epoch() + 1
 
-        if self.pruning_scheduler.shouldPrune():
+        if self.pruning_scheduler.should_prune():
             prev_layer_size, new_layer_size = self.model.model.prune()
             self.model.model.to(self.device)
             self.ckp.write_log(f'[Epoch {epoch}]\tPruning model from layer size {prev_layer_size} to {new_layer_size}')
