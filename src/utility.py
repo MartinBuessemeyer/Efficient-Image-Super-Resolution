@@ -80,8 +80,11 @@ class Checkpoint:
         self.n_processes = 8
 
     def add_csv_result(self, key, value, epoch=None):
-        if type(value) == torch.tensor:
+        # try converting to numeric value
+        try:
             value = float(value)
+        except ValueError as e:
+            pass
         if key in self.csv_results_dict.keys():
             self.csv_results_dict[key].append(value)
         else:
