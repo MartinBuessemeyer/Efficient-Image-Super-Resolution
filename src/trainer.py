@@ -125,9 +125,12 @@ class Trainer:
             sum_loss += loss
         if not self.args.wandb_disable:
             mean_loss = sum_loss / len(self.loader_train)
+            num_parameters = sum((param.numel() for param in self.model.model.parameters()))
             wandb.log({'train': {'loss': mean_loss,
-                                 'lr': self.optimizer.get_lr()}})
+                                 'lr': self.optimizer.get_lr()},
+                       'num_parameters': num_parameters})
             self.ckp.add_csv_result('train.loss', mean_loss, epoch)
+            self.ckp.add_csv_result('num_parameters', num_parameters, epoch)
 
         self.loss.end_log(len(self.loader_train))
         self.error_last = self.loss.log[-1, -1]
