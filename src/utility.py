@@ -83,7 +83,7 @@ class Checkpoint:
         # try converting to numeric value
         try:
             value = float(value)
-        except:
+        except ValueError as e:
             pass
         if key in self.csv_results_dict.keys():
             self.csv_results_dict[key].append(value)
