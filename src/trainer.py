@@ -73,8 +73,6 @@ class Trainer:
         if self.args.load != '':
             self.optimizer.load(ckp.dir, epoch=len(ckp.log))
 
-        self.error_last = 1e8
-
     def train(self):
         epoch = self.optimizer.get_last_epoch() + 1
 
@@ -137,7 +135,6 @@ class Trainer:
             self.ckp.add_csv_result('num_parameters', num_parameters, epoch)
 
         self.loss.end_log(len(self.loader_train))
-        self.error_last = self.loss.log[-1, -1]
         self.optimizer.schedule()
 
     def test_or_validate(self, loader, step_name, test_csv_log_length=False):

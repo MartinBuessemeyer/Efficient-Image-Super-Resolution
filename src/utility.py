@@ -202,8 +202,11 @@ def get_scheduler(args):
         return lrs.MultiStepLR, {'milestones': milestones, 'gamma': args.gamma}
     elif args.lr_scheduler == 'CosineAnnealingWarmRestarts':
         # restarts are synced with the pruning
-        print('Using CosineAnnealingWarmRestarts-Scheduler which is synced with the epochs_before_pruning.')
-        return lrs.CosineAnnealingWarmRestarts, {'eta_min': args.eta_min, 'T_0': args.epochs_before_pruning}
+        if args.epochs_before_pruning is None:
+            raise AttributeError('epochs_before_pruning needs to be set in order to use the '
+                                 'CosineAnnealingWarmRestarts in its current implementation.')
+        print('Using CosineAnnealingWarmRestarts which is synced with the epochs_before_pruning.')
+        return lrs.CosineAnnealingWarmRestarts, {'eta_min': args.eta_min, 'T_0': args.args.epochs_before_pruning}
 
 
 def make_optimizer(args, target):
