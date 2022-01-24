@@ -107,6 +107,11 @@ parser.add_argument('--epochs_before_pruning', type=int, default=None,
 # Optimization specifications
 parser.add_argument('--lr', type=float, default=1e-4,
                     help='learning rate')
+parser.add_argument('--lr-scheduler', type=str, default='MultiStepLR',
+                    help='pytorch learning rate scheduler. Use "MultiStepLR" for original behavior of the framework.',
+                    choices=['MultiStepLR', 'CosineAnnealingWarmRestarts'])
+parser.add_argument('--eta-min', type=int, default=1e-5,
+                    help='eta-min for the CosineAnnealingWarmRestarts-scheduler. ')
 parser.add_argument('--decay', type=str, default='200',
                     help='learning rate decay type')
 parser.add_argument('--gamma', type=float, default=0.5,
