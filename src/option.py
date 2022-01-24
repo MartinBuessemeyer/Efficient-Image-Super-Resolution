@@ -110,7 +110,7 @@ parser.add_argument('--lr', type=float, default=1e-4,
 parser.add_argument('--lr-scheduler', type=str, default='MultiStepLR',
                     help='pytorch learning rate scheduler. Use "MultiStepLR" for original behavior of the framework.',
                     choices=['MultiStepLR', 'CosineAnnealingWarmRestarts'])
-parser.add_argument('--eta-min', type=int, default=1e-5,
+parser.add_argument('--eta-min', type=float, default=1e-5,
                     help='eta-min for the CosineAnnealingWarmRestarts-scheduler. ')
 parser.add_argument('--decay', type=str, default='200',
                     help='learning rate decay type')
