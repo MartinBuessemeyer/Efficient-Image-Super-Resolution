@@ -137,7 +137,7 @@ class Trainer:
         self.loss.end_log(len(self.loader_train))
         self.optimizer.schedule()
 
-    def get_averaged_forward_pass_time(self, loader, num_iters_to_avg=50):
+    def get_averaged_forward_pass_time(self, loader, num_iters_to_avg=25):
         torch.set_grad_enabled(False)
         self.model.eval()
 
