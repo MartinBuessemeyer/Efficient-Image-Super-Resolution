@@ -206,7 +206,7 @@ def get_scheduler(args):
             raise AttributeError('epochs_before_pruning needs to be set in order to use the '
                                  'CosineAnnealingWarmRestarts in its current implementation.')
         print('Using CosineAnnealingWarmRestarts which is synced with the epochs_before_pruning.')
-        return lrs.CosineAnnealingWarmRestarts, {'eta_min': args.eta_min, 'T_0': args.args.epochs_before_pruning}
+        return lrs.CosineAnnealingWarmRestarts, {'eta_min': args.eta_min, 'T_0': args.epochs_before_pruning}
 
 
 def make_optimizer(args, target):
