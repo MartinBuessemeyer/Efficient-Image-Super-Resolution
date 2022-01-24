@@ -71,6 +71,10 @@ parser.add_argument('--precision', type=str, default='single',
                     help='FP precision for test (single | half)')
 
 # Option for Residual dense network (RDN)
+parser.add_argument('--disable-batchnorm', action='store_true',
+                    help='Disables batchnorm for the rep-vgg extension. (Use in RFDN)')
+
+# Option for Residual dense network (RDN)
 parser.add_argument('--G0', type=int, default=64,
                     help='default number of filters. (Use in RDN)')
 parser.add_argument('--RDNkSize', type=int, default=3,

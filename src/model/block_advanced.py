@@ -25,8 +25,7 @@ def conv_layer(
         groups=groups)
 
 
-
-def conv_bn(in_channels, out_channels, kernel_size):
+def conv_bn(in_channels, out_channels, kernel_size, disable_batchnorm=False):
     result = nn.Sequential()
     result.add_module(
         'conv',
@@ -34,7 +33,8 @@ def conv_bn(in_channels, out_channels, kernel_size):
             in_channels,
             out_channels,
             kernel_size))
-    result.add_module('bn', nn.BatchNorm2d(num_features=out_channels))
+    if not disable_batchnorm:
+        result.add_module('bn', nn.BatchNorm2d(num_features=out_channels))
     return result
 
 
@@ -174,7 +174,7 @@ class ESA(nn.Module):
 
 
 class SRB(nn.Module):
-    def __init__(self, in_channels, out_channels, activation, deploy=False):
+    def __init__(self, in_channels, out_channels, activation, deploy=False, disable_batchnorm=False):
         super(SRB, self).__init__()
 
         self.activation = activation
@@ -182,14 +182,15 @@ class SRB(nn.Module):
         self.out_channels = out_channels
         self.deploy = deploy
         self.identity_mask = torch.ones(out_channels, dtype=torch.bool)
+        self.disable_batchnorm = disable_batchnorm
 
         if self.deploy:
             self.reparam = conv_layer(in_channels, out_channels, 3)
         else:
-            self.conv3 = conv_bn(in_channels, out_channels, 3)
-            self.conv1 = conv_bn(in_channels, out_channels, 1)
+            self.conv3 = conv_bn(in_channels, out_channels, 3, disable_batchnorm=disable_batchnorm)
+            self.conv1 = conv_bn(in_channels, out_channels, 1, disable_batchnorm=disable_batchnorm)
             self.identity = nn.BatchNorm2d(
-                num_features=in_channels) if out_channels == in_channels else None
+                num_features=in_channels) if out_channels == in_channels and not disable_batchnorm else None
 
     def forward(self, input):
         if self.deploy:
@@ -212,7 +213,6 @@ class SRB(nn.Module):
         res_conv.bias = torch.nn.Parameter(res_bias)
         return res_conv
 
-
     def pad_1x1_to_3x3_tensor(self, kernel_1x1):
         if kernel_1x1 is None:
             return 0
@@ -224,11 +224,20 @@ class SRB(nn.Module):
             return 0, 0
         if isinstance(branch, nn.Sequential):
             kernel = branch.conv.weight
-            running_mean = branch.bn.running_mean
-            running_var = branch.bn.running_var
-            gamma = branch.bn.weight
-            beta = branch.bn.bias
-            eps = branch.bn.eps
+            bias = branch.conv.bias
+            if hasattr(branch, 'bn'):
+                running_mean = branch.bn.running_mean
+                running_var = branch.bn.running_var
+                gamma = branch.bn.weight
+                beta = branch.bn.bias
+                eps = branch.bn.eps
+            else:
+                # results in 0 as bias and * 1 in kernel
+                running_mean = torch.tensor(0, device=kernel.device)
+                running_var = torch.tensor(1, device=kernel.device)
+                gamma = torch.tensor(1, device=kernel.device)
+                beta = torch.tensor(0, device=kernel.device)
+                eps = torch.tensor(0, device=kernel.device)
         else:
             assert isinstance(branch, nn.BatchNorm2d)
             if not hasattr(self, 'id_tensor'):
@@ -245,9 +254,10 @@ class SRB(nn.Module):
             gamma = branch.weight
             beta = branch.bias
             eps = branch.eps
+            bias = torch.tensor(0, device=branch.weight.device)
         std = (running_var + eps).sqrt()
         t = (gamma / std).reshape(-1, 1, 1, 1)
-        return kernel * t, beta - running_mean * gamma / std
+        return kernel * t, bias + beta - running_mean * gamma / std
 
     def switch_to_deploy(self):
         if hasattr(self, 'reparam'):
@@ -265,7 +275,7 @@ class SRB(nn.Module):
 
 
 class RFDB(nn.Module):
-    def __init__(self, in_channels):
+    def __init__(self, in_channels, disable_batchnorm=False):
         super(RFDB, self).__init__()
         self.distilled_channels = in_channels // 2
         self.remaining_channels = in_channels
@@ -280,11 +290,11 @@ class RFDB(nn.Module):
             self.remaining_channels, self.distilled_channels, 3)
         self.distilled_layers = nn.ModuleList([distilled1, distilled2, distilled3, distilled4])
 
-        srb1 = SRB(in_channels, self.remaining_channels, self.activation)
+        srb1 = SRB(in_channels, self.remaining_channels, self.activation, disable_batchnorm=disable_batchnorm)
         srb2 = SRB(
-            self.remaining_channels, self.remaining_channels, self.activation)
+            self.remaining_channels, self.remaining_channels, self.activation, disable_batchnorm=disable_batchnorm)
         srb3 = SRB(
-            self.remaining_channels, self.remaining_channels, self.activation)
+            self.remaining_channels, self.remaining_channels, self.activation, disable_batchnorm=disable_batchnorm)
         self.srbs = nn.ModuleList([srb1, srb2, srb3])
 
         self.distilled = conv_layer(
