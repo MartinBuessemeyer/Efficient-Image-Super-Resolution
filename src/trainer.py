@@ -259,8 +259,9 @@ class Trainer:
     def test(self):
         self.test_or_validate(self.loader_test, 'test')
         num_parameters = num_params_of_model(self.model.model)
-        self.ckp.add_csv_result('num_parameters_production', num_parameters)
-        wandb.log({'num_parameters_production': num_parameters})
+        if not self.args.wandb_disable:
+            self.ckp.add_csv_result('num_parameters_production', num_parameters)
+            wandb.log({'num_parameters_production': num_parameters})
 
     def prepare(self, *args):
 
