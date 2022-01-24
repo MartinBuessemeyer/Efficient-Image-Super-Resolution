@@ -225,7 +225,7 @@ def make_optimizer(args, target):
         optimizer_class = optim.RMSprop
         kwargs_optimizer['eps'] = args.epsilon
 
-    kwargs_scheduler, scheduler_class = get_scheduler(args)
+    scheduler_class, kwargs_scheduler = get_scheduler(args)
 
     class CustomOptimizer(optimizer_class):
         def __init__(self, *args, **kwargs):
