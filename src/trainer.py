@@ -73,8 +73,6 @@ class Trainer:
         if self.args.load != '':
             self.optimizer.load(ckp.dir, epoch=len(ckp.log))
 
-        self.error_last = 1e8
-
     def train(self):
         epoch = self.optimizer.get_last_epoch() + 1
 
@@ -137,8 +135,29 @@ class Trainer:
             self.ckp.add_csv_result('num_parameters', num_parameters, epoch)
 
         self.loss.end_log(len(self.loader_train))
-        self.error_last = self.loss.log[-1, -1]
         self.optimizer.schedule()
+
+    def get_averaged_forward_pass_time(self, loader, num_iters_to_avg=25):
+        torch.set_grad_enabled(False)
+        self.model.eval()
+
+        durations = []
+        timer_test = utility.timer()
+        for i in range(num_iters_to_avg):
+            for idx_data, d in enumerate(loader):
+                for idx_scale, scale in enumerate(self.scale):
+                    d.dataset.set_scale(idx_scale)
+                    for lr, hr, filename in tqdm(d, ncols=80):
+                        batch_size = lr.size()[0]
+                        lr, hr = self.prepare(lr, hr)
+                        timer_test.tic()
+                        _ = self.model(lr, idx_scale)
+                        time_diff = timer_test.toc()
+                        time_diff /= batch_size
+                        durations.append(time_diff)
+        mean_time_forward_pass = float(np.mean(durations))
+        torch.set_grad_enabled(True)
+        return mean_time_forward_pass
 
     def test_or_validate(self, loader, step_name, test_csv_log_length=False):
         torch.set_grad_enabled(False)
@@ -237,7 +256,6 @@ class Trainer:
             mean_time_forward_pass,
             step_name,
             epoch, test_csv_log_length)
-
         torch.set_grad_enabled(True)
 
     def calculate_batch_ssim_psnr(self, batch_size, hr, sr):
@@ -262,8 +280,14 @@ class Trainer:
     def test(self):
         self.test_or_validate(self.loader_test, 'test')
         num_parameters = num_params_of_model(self.model.model)
-        self.ckp.add_csv_result('num_parameters_production', num_parameters)
-        wandb.log({'num_parameters_production': num_parameters})
+        mean_inference_time = self.get_averaged_forward_pass_time(self.loader_test)
+        self.ckp.write_log(
+            'Averaged mean inference time forward pass: {:.5f}s\n'.format(mean_inference_time))
+        if not self.args.wandb_disable:
+            self.ckp.add_csv_result('num_parameters_production', num_parameters)
+            self.ckp.add_csv_result('avg_inference_forward_pass_time', mean_inference_time)
+            wandb.log({'num_parameters_production': num_parameters})
+            wandb.log({'avg_inference_forward_pass_time': mean_inference_time})
 
     def prepare(self, *args):
 

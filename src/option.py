@@ -71,6 +71,10 @@ parser.add_argument('--precision', type=str, default='single',
                     help='FP precision for test (single | half)')
 
 # Option for Residual dense network (RDN)
+parser.add_argument('--disable-batchnorm', action='store_true',
+                    help='Disables batchnorm for the rep-vgg extension. (Use in RFDN)')
+
+# Option for Residual dense network (RDN)
 parser.add_argument('--G0', type=int, default=64,
                     help='default number of filters. (Use in RDN)')
 parser.add_argument('--RDNkSize', type=int, default=3,
@@ -107,6 +111,11 @@ parser.add_argument('--epochs_before_pruning', type=int, default=None,
 # Optimization specifications
 parser.add_argument('--lr', type=float, default=1e-4,
                     help='learning rate')
+parser.add_argument('--lr-scheduler', type=str, default='MultiStepLR',
+                    help='pytorch learning rate scheduler. Use "MultiStepLR" for original behavior of the framework.',
+                    choices=['MultiStepLR', 'CosineAnnealingWarmRestarts'])
+parser.add_argument('--eta-min', type=float, default=1e-5,
+                    help='eta-min for the CosineAnnealingWarmRestarts-scheduler. ')
 parser.add_argument('--decay', type=str, default='200',
                     help='learning rate decay type')
 parser.add_argument('--gamma', type=float, default=0.5,
@@ -143,7 +152,7 @@ parser.add_argument('--save_models', action='store_true',
 parser.add_argument(
     '--print_every',
     type=int,
-    default=100,
+    default=25,
     help='how many batches to wait before logging training status')
 parser.add_argument('--save_results', action='store_true',
                     help='save output results')
