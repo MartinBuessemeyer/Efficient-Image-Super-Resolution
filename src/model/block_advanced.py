@@ -12,7 +12,8 @@ def conv_layer(
         kernel_size,
         stride=1,
         dilation=1,
-        groups=1):
+        groups=1,
+        bias=True):
     padding = int((kernel_size - 1) / 2) * dilation
     return nn.Conv2d(
         in_channels,
@@ -20,21 +21,29 @@ def conv_layer(
         kernel_size,
         stride,
         padding=padding,
-        bias=True,
+        bias=bias,
         dilation=dilation,
         groups=groups)
 
 
 def conv_bn(in_channels, out_channels, kernel_size, disable_batchnorm=False):
     result = nn.Sequential()
-    result.add_module(
+    if not disable_batchnorm:
+        result.add_module(
         'conv',
         conv_layer(
             in_channels,
             out_channels,
-            kernel_size))
-    if not disable_batchnorm:
+            kernel_size,
+            bias=False))
         result.add_module('bn', nn.BatchNorm2d(num_features=out_channels))
+    else:
+        result.add_module(
+            'conv',
+            conv_layer(
+                in_channels,
+                out_channels,
+                kernel_size))
     return result
 
 
@@ -190,7 +199,7 @@ class SRB(nn.Module):
             self.conv3 = conv_bn(in_channels, out_channels, 3, disable_batchnorm=disable_batchnorm)
             self.conv1 = conv_bn(in_channels, out_channels, 1, disable_batchnorm=disable_batchnorm)
             self.identity = nn.BatchNorm2d(
-                num_features=in_channels) if out_channels == in_channels and not disable_batchnorm else None
+                num_features=in_channels) if out_channels == in_channels and not disable_batchnorm else torch.nn.Identity()
 
     def forward(self, input):
         if self.deploy:
@@ -198,7 +207,7 @@ class SRB(nn.Module):
         else:
             conv3 = (self.conv3(input))
             conv1 = (self.conv1(input))
-            residual = self.activation(conv3 + conv1 + input[:, self.identity_mask, ...])
+            residual = self.activation(conv3 + conv1 + self.identity(input[:, self.identity_mask, ...]))
 
         return residual
 
@@ -220,11 +229,11 @@ class SRB(nn.Module):
             return torch.nn.functional.pad(kernel_1x1, [1, 1, 1, 1])
 
     def _fuse_bn_tensor(self, branch):
-        if branch is None:
+        if branch is None or isinstance(branch, nn.Identity):
             return 0, 0
         if isinstance(branch, nn.Sequential):
             kernel = branch.conv.weight
-            bias = branch.conv.bias
+            bias = branch.conv.bias if hasattr(branch.conv, 'bias') else 0
             if hasattr(branch, 'bn'):
                 running_mean = branch.bn.running_mean
                 running_var = branch.bn.running_var
