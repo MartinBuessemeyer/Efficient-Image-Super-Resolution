@@ -74,7 +74,6 @@ python main.py --model RFDN_advanced --scale 2 --patch_size 96 --save rfdn_advan
 python main.py --model RFDN_advanced --scale 2 --patch_size 96 --save rfdn_advanced_600_pruning_interval_lrs_cawr_64       --epochs 600 --dir_data=/mnt/ssd1/midl21t1/datasets --reset --data_test DIV2K+Set5+BSD100+Urban100 --data_validate DIV2K+Set5+BSD100+Urban100 --batch_size 64 --pruning_interval 64 --save_results --lr-scheduler CosineAnnealingWarmRestarts
 python main.py --model RFDN_advanced --scale 2 --patch_size 96 --save rfdn_advanced_600_pruning_interval_lrs_cawr_256      --epochs 600 --dir_data=/mnt/ssd1/midl21t1/datasets --reset --data_test DIV2K+Set5+BSD100+Urban100 --data_validate DIV2K+Set5+BSD100+Urban100 --batch_size 64 --pruning_interval 256 --save_results --lr-scheduler CosineAnnealingWarmRestarts
 
-
 # Epochs
 #python main.py --model RFDN          --scale 2 --patch_size 96 --save rfdn_1500          --epochs 1500 --dir_data=/mnt/ssd1/midl21t1/datasets --reset --data_test DIV2K+Set5+BSD100+Urban100 --data_validate DIV2K+Set5+BSD100+Urban100 --save_results
 #python main.py --model RFDN_advanced --scale 2 --patch_size 96 --save rfdn_advanced_1500 --epochs 1500 --dir_data=/mnt/ssd1/midl21t1/datasets --reset --data_test DIV2K+Set5+BSD100+Urban100 --data_validate DIV2K+Set5+BSD100+Urban100 --save_results
