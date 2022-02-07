@@ -113,6 +113,8 @@ parser.add_argument('--pruning_interval', type=int, default=None,
 # Optimization specifications
 parser.add_argument('--lr', type=float, default=1e-4,
                     help='learning rate')
+parser.add_argument('--startup-lr', type=float, default=1e-4,
+                    help='learning rate')
 parser.add_argument('--lr-scheduler', type=str, default='MultiStepLR',
                     help='pytorch learning rate scheduler. Use "MultiStepLR" for original behavior of the framework.',
                     choices=['MultiStepLR', 'CosineAnnealingWarmRestarts'])

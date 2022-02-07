@@ -1,6 +1,7 @@
 import datetime
 import os
 import time
+from bisect import bisect_right
 from multiprocessing import Process, Queue
 
 import imageio
@@ -195,6 +196,26 @@ def calc_psnr(sr, hr, scale, rgb_range, dataset=None):
     return -10 * math.log10(mse)
 
 
+# The original SequentialLR has no get_last_lr() implemented.
+class CustomSequentialLR(lrs.SequentialLR):
+    def get_last_lr(self):
+        idx = bisect_right(self._milestones, self.last_epoch)
+        if idx != 0:
+            return self._schedulers[idx].get_last_lr()
+        if not hasattr(self, 'const_lr'):
+            self.const_lr = self._schedulers[idx].get_last_lr()
+        return self.const_lr
+
+
+
+# Throw no exception when using a factor > 1
+class CustomConstantLR(lrs.ConstantLR):
+    def __init__(self, optimizer, factor=1.0 / 3, total_iters=5, last_epoch=-1, verbose=False):
+        self.factor = factor
+        self.total_iters = total_iters
+        super(lrs.ConstantLR, self).__init__(optimizer, last_epoch, verbose)
+
+
 def get_scheduler(args):
     if args.lr_scheduler == 'MultiStepLR':
         print('Using MultiStepLR-Scheduler, which is the standard of the framework.')
@@ -206,8 +227,13 @@ def get_scheduler(args):
             raise AttributeError('pruning_interval needs to be set in order to use the '
                                  'CosineAnnealingWarmRestarts in its current implementation.')
         print('Using CosineAnnealingWarmRestarts which is synced with the epochs_before_pruning.')
-        startup_scheduler = (lrs.ConstantLR, {'factor': 1, 'total_iters': args.epochs_before_pruning})
-        pruning_scheduler = (lrs.CosineAnnealingWarmRestarts, {'eta_min': args.eta_min, 'T_0': args.pruning_interval})
+        startup_lr_factor = args.startup_lr / args.lr
+        startup_scheduler = (
+            CustomConstantLR, {'factor': startup_lr_factor, 'total_iters': args.epochs_before_pruning},
+            args.epochs_before_pruning)
+        pruning_scheduler = (
+            lrs.CosineAnnealingWarmRestarts, {'eta_min': args.eta_min, 'T_0': args.pruning_interval}, None)
+        return [startup_scheduler, pruning_scheduler]
 
 
 def make_optimizer(args, target):
@@ -237,7 +263,8 @@ def make_optimizer(args, target):
 
         def _register_scheduler(self, schedulers_with_args):
             if len(schedulers_with_args) <= 1:
-                self.scheduler = schedulers_with_args[0](self, **schedulers_with_args[1])
+                scheduler_class, scheduler_args = schedulers_with_args[0][0], schedulers_with_args[0][1]
+                self.scheduler = scheduler_class(self, **scheduler_args)
             else:
                 schedulers = []
                 milestones = []
@@ -245,7 +272,7 @@ def make_optimizer(args, target):
                     schedulers.append(scheduler_class(self, **scheduler_args))
                     if milestone is not None:
                         milestones.append(milestone)
-                self.scheduler = lrs.SequentialLR(schedulers=schedulers, milestones=milestones)
+                self.scheduler = CustomSequentialLR(self, schedulers=schedulers, milestones=milestones)
 
         def save(self, save_dir):
             torch.save(self.state_dict(), self.get_dir(save_dir))
