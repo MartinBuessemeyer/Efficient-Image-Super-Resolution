@@ -199,14 +199,15 @@ def get_scheduler(args):
     if args.lr_scheduler == 'MultiStepLR':
         print('Using MultiStepLR-Scheduler, which is the standard of the framework.')
         milestones = list(map(lambda x: int(x), args.decay.split('-')))
-        return lrs.MultiStepLR, {'milestones': milestones, 'gamma': args.gamma}
+        return [(lrs.MultiStepLR, {'milestones': milestones, 'gamma': args.gamma})]
     elif args.lr_scheduler == 'CosineAnnealingWarmRestarts':
         # restarts are synced with the pruning
-        if args.epochs_before_pruning is None:
-            raise AttributeError('epochs_before_pruning needs to be set in order to use the '
+        if args.pruning_interval is None:
+            raise AttributeError('pruning_interval needs to be set in order to use the '
                                  'CosineAnnealingWarmRestarts in its current implementation.')
         print('Using CosineAnnealingWarmRestarts which is synced with the epochs_before_pruning.')
-        return lrs.CosineAnnealingWarmRestarts, {'eta_min': args.eta_min, 'T_0': args.epochs_before_pruning}
+        startup_scheduler = (lrs.ConstantLR, {'factor': 1, 'total_iters': args.epochs_before_pruning})
+        pruning_scheduler = (lrs.CosineAnnealingWarmRestarts, {'eta_min': args.eta_min, 'T_0': args.pruning_interval})
 
 
 def make_optimizer(args, target):
@@ -228,14 +229,23 @@ def make_optimizer(args, target):
         optimizer_class = optim.RMSprop
         kwargs_optimizer['eps'] = args.epsilon
 
-    scheduler_class, kwargs_scheduler = get_scheduler(args)
+    schedulers_with_args = get_scheduler(args)
 
     class CustomOptimizer(optimizer_class):
         def __init__(self, *args, **kwargs):
             super(CustomOptimizer, self).__init__(*args, **kwargs)
 
-        def _register_scheduler(self, scheduler_class, **kwargs):
-            self.scheduler = scheduler_class(self, **kwargs)
+        def _register_scheduler(self, schedulers_with_args):
+            if len(schedulers_with_args) <= 1:
+                self.scheduler = schedulers_with_args[0](self, **schedulers_with_args[1])
+            else:
+                schedulers = []
+                milestones = []
+                for scheduler_class, scheduler_args, milestone in schedulers_with_args:
+                    schedulers.append(scheduler_class(self, **scheduler_args))
+                    if milestone is not None:
+                        milestones.append(milestone)
+                self.scheduler = lrs.SequentialLR(schedulers=schedulers, milestones=milestones)
 
         def save(self, save_dir):
             torch.save(self.state_dict(), self.get_dir(save_dir))
@@ -259,5 +269,5 @@ def make_optimizer(args, target):
             return self.scheduler.last_epoch
 
     optimizer = CustomOptimizer(trainable, **kwargs_optimizer)
-    optimizer._register_scheduler(scheduler_class, **kwargs_scheduler)
+    optimizer._register_scheduler(schedulers_with_args)
     return optimizer
