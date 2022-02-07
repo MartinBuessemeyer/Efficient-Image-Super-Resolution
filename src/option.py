@@ -105,7 +105,9 @@ parser.add_argument('--test_only', action='store_true',
                     help='set this option to test the model')
 parser.add_argument('--batch_size_test', type=int, default=1,
                     help='input batch size for testing')
-parser.add_argument('--epochs_before_pruning', type=int, default=None,
+parser.add_argument('--epochs_before_pruning', type=int, default=0,
+                    help='epochs to train before pruning')
+parser.add_argument('--pruning_interval', type=int, default=None,
                     help='epochs to train before pruning')
 
 # Optimization specifications
