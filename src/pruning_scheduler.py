@@ -19,7 +19,7 @@ class PruneAfterEpochs(PruningScheduler):
         self.epochs_since_pruning = 0
 
     def should_prune(self):
-        if self.epochs_before_pruning < 0:
+        if self.epochs_before_pruning > 0:
             self.epochs_before_pruning -= 1
             return False
 
