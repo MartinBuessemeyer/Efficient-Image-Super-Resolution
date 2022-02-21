@@ -17,16 +17,15 @@ RUN apt-get -y install \
 # Install own dependencies
 RUN pip3 install imageio \
     matplotlib \
-    numpy \
+    numpy==1.22.2 \
     opencv-python-headless \
-    pillow \
+    pillow==8.4.0 \
     scikit-image \
     torchvision \
     tqdm \
     wandb \
     pandas
 
-RUN pip3 install numpy
 # Install latest pytorch
 RUN pip3 install torch==1.10.2+cu113 torchvision==0.11.3+cu113 torchaudio==0.10.2+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
 
