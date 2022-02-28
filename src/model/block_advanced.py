@@ -233,7 +233,7 @@ class SRB(nn.Module):
             return 0, 0
         if isinstance(branch, nn.Sequential):
             kernel = branch.conv.weight
-            bias = branch.conv.bias if hasattr(branch.conv, 'bias') else 0
+            bias = branch.conv.bias if hasattr(branch.conv, 'bias') and branch.conv.bias is not None else 0
             if hasattr(branch, 'bn'):
                 running_mean = branch.bn.running_mean
                 running_var = branch.bn.running_var
