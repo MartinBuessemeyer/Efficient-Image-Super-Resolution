@@ -2,6 +2,7 @@ from decimal import Decimal
 
 import numpy as np
 import torch
+import torchvision.transforms
 import wandb
 from skimage.metrics import peak_signal_noise_ratio, structural_similarity
 from tqdm import tqdm
@@ -193,6 +194,11 @@ class Trainer:
                     time_diff /= batch_size
 
                     durations.append(time_diff)
+                    # handle hr wrong resolution
+                    if sr.shape != hr.shape:
+                        h, w = sr.shape[:2]
+                        hr = torchvision.transforms.functional.resize(hr, size=(h, w),
+                                                                      interpolation=torchvision.transforms.functional.InterpolationMode.BICUBIC)
                     loss = self.loss(sr, hr)
                     sr = utility.quantize(sr, self.args.rgb_range)
                     save_list = [sr]
