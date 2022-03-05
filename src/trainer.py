@@ -196,7 +196,7 @@ class Trainer:
                     durations.append(time_diff)
                     # handle hr wrong resolution
                     if sr.shape != hr.shape:
-                        h, w = sr.shape[:2]
+                        h, w = sr.shape[2:]
                         hr = torchvision.transforms.functional.resize(hr, size=(h, w),
                                                                       interpolation=torchvision.transforms.functional.InterpolationMode.BICUBIC)
                     loss = self.loss(sr, hr)
