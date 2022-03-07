@@ -114,7 +114,7 @@ class Trainer:
                     self.args.gclip
                 )
             self.optimizer.step()
-            durations.append(pass_timer.hold() / lr.size()[0])
+            durations.append(pass_timer.toc() / lr.size()[0])
             timer_model.hold()
 
             if (batch + 1) % self.args.print_every == 0:
