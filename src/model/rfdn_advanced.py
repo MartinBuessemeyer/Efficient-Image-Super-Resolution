@@ -126,6 +126,8 @@ class RFDNAdvanced(nn.Module):
         for block in [self.B1, self.B2, self.B3, self.B4]:
             for srb_idx in range(len(block.srbs)):
                 srb = block.srbs[srb_idx]
+                if srb.get_layer_size() <= 5:
+                    continue
                 mask, num_filters_remaining = _get_mask_for_pruning(srb)
                 block.srbs[srb_idx] = _get_pruned_srb_by_mask(srb, mask, num_filters_remaining, self.device)
                 if srb_idx == 0:
