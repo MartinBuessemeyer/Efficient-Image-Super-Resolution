@@ -69,7 +69,6 @@ class Model(nn.Module):
             )
 
         for s in save_dirs:
-            print(f'Saving model: {s}')
             torch.save(self.model if self.is_pruning_model else self.model.state_dict(), s)
 
     def load(self, apath, pre_train='', resume=-1, cpu=False):

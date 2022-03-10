@@ -166,7 +166,7 @@ class Trainer:
         torch.set_grad_enabled(True)
         return mean_time_forward_pass
 
-    def test_or_validate(self, loader, step_name, test_csv_log_length=False):
+    def test_or_validate(self, loader, step_name, test_csv_log_length=False, save_model=True):
         torch.set_grad_enabled(False)
 
         epoch = self.optimizer.get_last_epoch()
@@ -215,7 +215,7 @@ class Trainer:
                     if self.args.save_gt:
                         save_list.extend([lr, hr])
 
-                    if self.args.save_results:
+                    if self.args.save_results and save_model:
                         self.ckp.save_results(d, filename[0], save_list, scale)
 
                     dataset_to_scale_to_sum_losses[d.dataset.name][scale] += loss
@@ -252,7 +252,7 @@ class Trainer:
         if self.args.save_results:
             self.ckp.end_background()
 
-        if not self.args.test_only:
+        if (not self.args.test_only) and save_model:
             self.ckp.save(self, epoch, is_best=(best[1][0, 0] + 1 == epoch))
 
         self.ckp.write_log(
@@ -290,7 +290,7 @@ class Trainer:
         self.test_or_validate(self.loader_validate, 'validate', True)
 
     def test(self):
-        self.test_or_validate(self.loader_test, 'test')
+        self.test_or_validate(self.loader_test, 'test', save_model=False)
         num_parameters = num_params_of_model(self.model.model)
         mean_inference_time = self.get_averaged_forward_pass_time(self.loader_test)
         self.ckp.write_log(
