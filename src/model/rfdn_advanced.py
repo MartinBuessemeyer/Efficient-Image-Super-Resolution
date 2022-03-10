@@ -123,6 +123,8 @@ class RFDNAdvanced(nn.Module):
             block.switch_to_deploy()
 
     def prune(self):
+        mask = torch.tensor([-1] * 5)
+        num_filters_remaining = 5
         for block in [self.B1, self.B2, self.B3, self.B4]:
             for srb_idx in range(len(block.srbs)):
                 srb = block.srbs[srb_idx]
