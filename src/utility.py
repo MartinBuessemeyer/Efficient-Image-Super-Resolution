@@ -51,15 +51,15 @@ class Checkpoint:
         if not args.load:
             if not args.save:
                 args.save = now
-            self.dir = os.path.join('..', 'experiment', args.save)
+            self.dir = os.path.join(os.getcwd(), '..', 'experiment', args.save)
         else:
-            self.dir = os.path.join('..', 'experiment', args.load)
+            self.dir = os.path.join(os.getcwd(), '..', 'experiment', args.load)
             if os.path.exists(self.dir):
                 self.log = torch.load(self.get_path('psnr_log.pt'))
                 print('Continue from epoch {}...'.format(len(self.log)))
             else:
                 args.load = ''
-        self.csv_results_file = os.path.join('..', 'experiment', f'{args.save}.csv')
+        self.csv_results_file = os.path.join(os.getcwd(), '..', 'experiment', f'{args.save}.csv')
         self.csv_results_dict = {}
         if args.reset:
             os.system('rm -rf ' + self.dir)
