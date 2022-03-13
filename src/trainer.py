@@ -2,6 +2,7 @@ from decimal import Decimal
 
 import numpy as np
 import torch
+import torchvision.transforms
 import wandb
 from skimage.metrics import peak_signal_noise_ratio, structural_similarity
 from tqdm import tqdm
@@ -93,6 +94,8 @@ class Trainer:
         self.model.train()
 
         timer_data, timer_model = utility.timer(), utility.timer()
+        pass_timer = utility.timer()
+        durations = []
         # TEMP
         self.loader_train.dataset.set_scale(0)
         sum_loss = 0
@@ -100,7 +103,7 @@ class Trainer:
             lr, hr = self.prepare(lr, hr)
             timer_data.hold()
             timer_model.tic()
-
+            pass_timer.tic()
             self.optimizer.zero_grad()
             sr = self.model(lr, 0)
             loss = self.loss(sr, hr)
@@ -111,7 +114,7 @@ class Trainer:
                     self.args.gclip
                 )
             self.optimizer.step()
-
+            durations.append(pass_timer.toc() / lr.size()[0])
             timer_model.hold()
 
             if (batch + 1) % self.args.print_every == 0:
@@ -128,11 +131,15 @@ class Trainer:
         if not self.args.wandb_disable:
             mean_loss = sum_loss / len(self.loader_train)
             num_parameters = num_params_of_model(self.model.model)
+            mean_train_duration = np.mean(durations)
+            print(f'Mean Train Duration: {mean_train_duration}')
             wandb.log({'train': {'loss': mean_loss,
-                                 'lr': self.optimizer.get_lr()},
+                                 'lr': self.optimizer.get_lr(),
+                                 'time': mean_train_duration},
                        'num_parameters': num_parameters})
             self.ckp.add_csv_result('train.loss', mean_loss, epoch)
             self.ckp.add_csv_result('num_parameters', num_parameters, epoch)
+            self.ckp.add_csv_result('train.time', mean_train_duration, epoch)
 
         self.loss.end_log(len(self.loader_train))
         self.optimizer.schedule()
@@ -159,7 +166,7 @@ class Trainer:
         torch.set_grad_enabled(True)
         return mean_time_forward_pass
 
-    def test_or_validate(self, loader, step_name, test_csv_log_length=False):
+    def test_or_validate(self, loader, step_name, test_csv_log_length=False, save_model=True):
         torch.set_grad_enabled(False)
 
         epoch = self.optimizer.get_last_epoch()
@@ -193,6 +200,11 @@ class Trainer:
                     time_diff /= batch_size
 
                     durations.append(time_diff)
+                    # handle hr wrong resolution
+                    if sr.shape != hr.shape:
+                        h, w = sr.shape[2:]
+                        hr = torchvision.transforms.functional.resize(hr, size=(h, w),
+                                                                      interpolation=torchvision.transforms.functional.InterpolationMode.BICUBIC)
                     loss = self.loss(sr, hr)
                     sr = utility.quantize(sr, self.args.rgb_range)
                     save_list = [sr]
@@ -203,7 +215,7 @@ class Trainer:
                     if self.args.save_gt:
                         save_list.extend([lr, hr])
 
-                    if self.args.save_results:
+                    if self.args.save_results and save_model:
                         self.ckp.save_results(d, filename[0], save_list, scale)
 
                     dataset_to_scale_to_sum_losses[d.dataset.name][scale] += loss
@@ -240,7 +252,7 @@ class Trainer:
         if self.args.save_results:
             self.ckp.end_background()
 
-        if not self.args.test_only:
+        if (not self.args.test_only) and save_model:
             self.ckp.save(self, epoch, is_best=(best[1][0, 0] + 1 == epoch))
 
         self.ckp.write_log(
@@ -278,7 +290,7 @@ class Trainer:
         self.test_or_validate(self.loader_validate, 'validate', True)
 
     def test(self):
-        self.test_or_validate(self.loader_test, 'test')
+        self.test_or_validate(self.loader_test, 'test', save_model=False)
         num_parameters = num_params_of_model(self.model.model)
         mean_inference_time = self.get_averaged_forward_pass_time(self.loader_test)
         self.ckp.write_log(

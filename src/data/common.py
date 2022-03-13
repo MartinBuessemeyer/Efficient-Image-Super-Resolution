@@ -10,8 +10,8 @@ def get_patch(*args, patch_size=96, scale=2, multi=False, input_large=False):
 
     if not input_large:
         p = scale if multi else 1
-        tp = p * patch_size
-        ip = tp // scale
+        ip = (p * patch_size) // scale
+        tp = ip * scale
     else:
         tp = patch_size
         ip = patch_size

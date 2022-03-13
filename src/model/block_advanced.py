@@ -201,6 +201,9 @@ class SRB(nn.Module):
             self.identity = nn.BatchNorm2d(
                 num_features=in_channels) if out_channels == in_channels and not disable_batchnorm else torch.nn.Identity()
 
+    def get_layer_size(self):
+        return self.reparam.out_channels if self.deploy else self.conv1.conv.out_channels
+
     def forward(self, input):
         if self.deploy:
             residual = self.activation(self.reparam(input))
