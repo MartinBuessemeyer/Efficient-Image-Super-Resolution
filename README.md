@@ -2,7 +2,8 @@
 
 This repository contains the source for our Machine Intelligence with Deep Learning (MIDL) seminar topic _Efficient Image Super-Resolution_ from the winter term 2021/2022.
 
-The project goal is to extend the already existing the [Residual Feature Distillation Network](https://arxiv.org/abs/2009.11551) to increase speed and accuracy while simultaneously decreasing model size.  
+The project goal is to extend the already existing the [Residual Feature Distillation Network](https://arxiv.org/abs/2009.11551) to increase speed and accuracy while simultaneously decreasing model size. 
+The code of the RFDN can be found [here](https://github.com/njulj/RFDN), the underlying framework of the AIM 2020 Challenge [here](https://github.com/sanghyun-son/EDSR-PyTorch).
 
 ## Set Up
 
