@@ -19,3 +19,6 @@ target/
 *.swp
 .vscode
 .idea
+
+# Matplotlib
+*.svg

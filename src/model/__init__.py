@@ -11,6 +11,7 @@ class Model(nn.Module):
     def __init__(self, args, ckp):
         super(Model, self).__init__()
         print('Making model...')
+        self.is_pruning_model = args.pruning_interval is not None
 
         self.scale = args.scale
         self.idx_scale = 0
@@ -68,7 +69,7 @@ class Model(nn.Module):
             )
 
         for s in save_dirs:
-            torch.save(self.model.state_dict(), s)
+            torch.save(self.model if self.is_pruning_model else self.model.state_dict(), s)
 
     def load(self, apath, pre_train='', resume=-1, cpu=False):
         load_from = None
@@ -101,7 +102,10 @@ class Model(nn.Module):
             )
 
         if load_from:
-            self.model.load_state_dict(load_from, strict=False)
+            if self.is_pruning_model:
+                self.model = load_from
+            else:
+                self.model.load_state_dict(load_from, strict=False)
 
     def forward_chop(self, *args, shave=10, min_size=160000):
         scale = 1 if self.input_large else self.scale[self.idx_scale]

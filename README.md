@@ -15,6 +15,7 @@ git clone git@github.com:MartinBuessemeyer/Efficient-Image-Super-Resolution.git
 
 2. Get the data sets
     - DIV2K
+    - Flickr2k
     - Set5
     - Set14 
     - BSD100

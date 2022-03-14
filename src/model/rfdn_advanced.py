@@ -36,7 +36,7 @@ def _get_mask_for_pruning(srb):
 
 
 def _get_pruned_subsequent_srb_block(srb, mask, remaining_in_channels, device):
-    new_srb = SRB(remaining_in_channels, srb.out_channels, srb.activation, srb.deploy)
+    new_srb = SRB(remaining_in_channels, srb.out_channels, srb.activation, srb.deploy, srb.disable_batchnorm)
     for conv, new_conv in zip([srb.conv3.conv, srb.conv1.conv],
                               [new_srb.conv3.conv, srb.conv1.conv]):
         new_conv.weight = _get_new_parameter(conv.weight[:, mask, ...], device)
@@ -51,7 +51,7 @@ def _get_pruned_srb_by_mask(srb, mask, remaining_filters, device):
     conv = srb.get_equivalent_conv_layer()
     num_filters, num_input_channels, h, w = conv.weight.shape
     assert num_filters == len(mask)
-    new_srb = SRB(num_input_channels, remaining_filters, srb.activation, srb.deploy)
+    new_srb = SRB(num_input_channels, remaining_filters, srb.activation, srb.deploy, srb.disable_batchnorm)
     new_srb.conv3.conv.weight = _get_new_parameter(conv.weight[mask], device)
     new_srb.conv3.conv.bias = _get_new_parameter(conv.bias[mask], device)
     return new_srb.to(device)
@@ -79,12 +79,13 @@ class RFDNAdvanced(nn.Module):
             args.n_colors, args.n_feats, kernel_size=3)
 
         self.device = torch.device('cpu' if args.cpu else 'cuda')
+        self.disable_batchnorm = args.disable_batchnorm
 
         num_rfdb_blocks = 4
-        self.B1 = B.RFDB(in_channels=args.n_feats)
-        self.B2 = B.RFDB(in_channels=args.n_feats)
-        self.B3 = B.RFDB(in_channels=args.n_feats)
-        self.B4 = B.RFDB(in_channels=args.n_feats)
+        self.B1 = B.RFDB(in_channels=args.n_feats, disable_batchnorm=self.disable_batchnorm)
+        self.B2 = B.RFDB(in_channels=args.n_feats, disable_batchnorm=self.disable_batchnorm)
+        self.B3 = B.RFDB(in_channels=args.n_feats, disable_batchnorm=self.disable_batchnorm)
+        self.B4 = B.RFDB(in_channels=args.n_feats, disable_batchnorm=self.disable_batchnorm)
         self.c = B.conv_block(args.n_feats * num_rfdb_blocks,
                               args.n_feats, kernel_size=1, act_type='lrelu')
 
@@ -122,9 +123,13 @@ class RFDNAdvanced(nn.Module):
             block.switch_to_deploy()
 
     def prune(self):
+        mask = torch.tensor([-1] * 5)
+        num_filters_remaining = 5
         for block in [self.B1, self.B2, self.B3, self.B4]:
             for srb_idx in range(len(block.srbs)):
                 srb = block.srbs[srb_idx]
+                if srb.get_layer_size() <= 5:
+                    continue
                 mask, num_filters_remaining = _get_mask_for_pruning(srb)
                 block.srbs[srb_idx] = _get_pruned_srb_by_mask(srb, mask, num_filters_remaining, self.device)
                 if srb_idx == 0:
