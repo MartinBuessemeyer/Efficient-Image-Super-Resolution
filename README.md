@@ -24,19 +24,19 @@ git clone git@github.com:MartinBuessemeyer/Efficient-Image-Super-Resolution.git
 ```bash
 sh ./scripts/build-image-enroot.sh
 ```
-
+Alternatively, you can execute the code locally. Make sure that you have installed pytorch and the packages in `src/requirements.txt`
 ## How to execute
 
 1. Run the container. The following steps should be executed inside the enroot container.
 
-2. Adjust the `src/run.sh`. You can find all the available options in the `src/options.py`. 
+2. Adjust the `src/run.sh`. You can find all the available options in the `src/options.py`. Possible configurations are listed in the `src/run.sh`.
 
 3. Run the `src/run.sh`.
 ```bash
 sh ./src/run.sh
 ```
 
-4. The preferred way to view results is via WandB.
+4. The preferred way to view results is via [WandB](https://wandb.ai/).
 Additionally, results are stored in the `experiment` folder.
  
 ## Authors
