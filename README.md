@@ -1,8 +1,9 @@
-# Efficient Image Super Resolution
+# Efficient Image Super-Resolution
 
-This repository contains the source for our Machine Intelligence with Deep Learning (MIDL) seminar topic _Efficient Image Super Resolution_ from the winter term 2021/2022.
+This repository contains the source for our Machine Intelligence with Deep Learning (MIDL) seminar topic _Efficient Image Super-Resolution_ from the winter term 2021/2022.
 
-The project goal is to extend the already existing the [Residual Feature Distillation Network](https://arxiv.org/abs/2009.11551) to increase speed and accuracy while simultaneously decreasing model size.  
+The project goal is to extend the already existing the [Residual Feature Distillation Network](https://arxiv.org/abs/2009.11551) to increase speed and accuracy while simultaneously decreasing model size. 
+The code of the RFDN can be found [here](https://github.com/njulj/RFDN), the underlying framework of the AIM 2020 Challenge [here](https://github.com/sanghyun-son/EDSR-PyTorch).
 
 ## Set Up
 
@@ -25,12 +26,12 @@ git clone git@github.com:MartinBuessemeyer/Efficient-Image-Super-Resolution.git
 ```bash
 sh ./scripts/build-image-enroot.sh
 ```
-Alternatively, you can execute the code locally. Make sure that you have installed pytorch and the packages in `src/requirements.txt`
+Alternatively, you can execute the code locally. Make sure that you installed pytorch and the packages listed in `src/requirements.txt`.
 ## How to execute
 
 1. Run the container. The following steps should be executed inside the enroot container.
 
-2. Adjust the `src/run.sh`. You can find all the available options in the `src/options.py`. Possible configurations are listed in the `src/run.sh`.
+2. Adjust the `src/run.sh`. You can find all the available options in the `src/options.py`. Example configurations are listed in the `src/run.sh`.
 
 3. Run the `src/run.sh`.
 ```bash
